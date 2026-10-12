@@ -171,7 +171,7 @@ Grupo de Jurisprudencia. (2026). *Retroalimentación de usabilidad del prototipo
 
 Lozano Calderón, J. S., Rojas Villamil, A. F., López Urrego, J. S., y Romero Cajamarca, J. O. (2026). *CV Match: prototipo de hoja de vida* [Prototipo interactivo]. Figma. https://www.figma.com/make/X4BrLzRcwRFbpZESLq63D4/Prototipo-de-Hoja-de-Vida
 
-*La comunicación personal con Juliana González (Blen360, 2026) se cita solo en el texto, según APA 7.*
+*La comunicación en la conferencia de CONIITI (El Congreso Internacional de Innovación y Tendencias en Ingeniería )con Juliana González (Blen360, 2026) se cita solo en el texto, según APA 7.*
 # PROYECTO_IA_TALENTO_CV_MATCH
 # PROJECT_TALENT_MATCH_CV_IA-_ELECTIVE
 # PROJECT_TALENT_MATCH_CV_IA-_ELECTIVE
