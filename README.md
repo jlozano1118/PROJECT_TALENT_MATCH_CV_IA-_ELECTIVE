@@ -173,3 +173,4 @@ Lozano Calderón, J. S., Rojas Villamil, A. F., López Urrego, J. S., y Romero C
 
 *La comunicación personal con Juliana González (Blen360, 2026) se cita solo en el texto, según APA 7.*
 # PROYECTO_IA_TALENTO_CV_MATCH
+# PROJECT_TALENT_MATCH_CV_IA-_ELECTIVE
