@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="TalentMatch · CV Match: match de hojas de vida con proyectos TI usando IA (Claude Opus 5.5) y Python. Iteración 3 — Universidad Católica de Colombia.">
+<title>TalentMatch · CV Match</title>
+<style>[hidden]{display:none!important}</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* Layout: consola de mando nocturna (navy + menta del prototipo Figma) con un acento "portal" ámbar; SPA de vistas apiladas bajo una barra fija */
+:root{
+  --bg:#070b16; --bg2:#0c1324; --panel:#111a2e; --line:#1f2a44; --line2:#2b3a5c;
+  --fg:#e6ecf7; --muted:#8a97b4; --dim:#56627f;
+  --mint:#00e5a0; --mint-d:#00b37d; --portal:#ff9a3c; --portal2:#ffcf5a;
+  --bad:#ff5f6d; --warn:#f6b03c; --ok:#00e5a0; --cyan:#3fc8ff;
+  --f-display:"Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --f-body:"DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.55;margin:0;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--mint)}
+:focus-visible{outline:2px solid var(--portal);outline-offset:2px}
+.mono{font-family:var(--f-mono)}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint)}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;letter-spacing:-.01em;text-wrap:balance;margin:0}
+h2{font-size:clamp(30px,4.4vw,44px);line-height:1.05}
+h3{font-size:24px;line-height:1.15}
+p{margin:0}
+.muted{color:var(--muted)}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px}
+
+/* ---------- top bar ---------- */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:rgba(7,11,22,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:14px;min-height:58px;flex-wrap:wrap;padding-block:8px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-size:21px;background:none;border:0;cursor:pointer;padding:0}
+.logo i{display:grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--mint);color:#04140e;font-family:var(--f-mono);font-style:normal;font-size:14px;font-weight:600}
+.tag{font-family:var(--f-mono);font-size:10.5px;padding:3px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--muted)}
+.tag.it{border-color:rgba(255,154,60,.5);color:var(--portal)}
+.nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.nav button{background:none;border:1px solid transparent;color:var(--muted);padding:6px 11px;border-radius:999px;cursor:pointer;font-size:13.5px}
+.nav button:hover{color:var(--fg);border-color:var(--line2)}
+.nav button.on{background:var(--mint);color:#04140e;font-weight:700}
+.tools{display:flex;gap:8px;align-items:center}
+.icon-btn{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line2);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:12.5px;color:var(--fg)}
+.icon-btn:hover{border-color:var(--portal)}
+.icon-btn.live{border-color:var(--portal);color:var(--portal)}
+.eq{display:inline-flex;gap:2px;align-items:flex-end;height:12px}
+.eq b{width:2px;background:currentColor;height:30%}
+.live .eq b{animation:eq .9s ease-in-out infinite}
+.live .eq b:nth-child(2){animation-delay:.2s}.live .eq b:nth-child(3){animation-delay:.45s}
+@keyframes eq{0%,100%{height:25%}50%{height:100%}}
+.admin-chip{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.av{display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,var(--mint),var(--cyan));color:#04140e;font-weight:700;flex:none}
+
+/* ---------- buttons / panels ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:11px 18px;font-weight:700;cursor:pointer;border:1px solid transparent;transition:transform .15s, box-shadow .2s}
+.btn.pri{background:var(--mint);color:#04140e}
+.btn.pri:hover{box-shadow:0 0 0 4px rgba(0,229,160,.18),0 0 28px rgba(0,229,160,.35);transform:translateY(-1px)}
+.btn.ghost{background:transparent;border-color:var(--line2);color:var(--fg)}
+.btn.ghost:hover{border-color:var(--mint)}
+.btn.portal{background:linear-gradient(90deg,var(--portal),var(--portal2));color:#1d0d00}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;min-width:0}
+.plabel{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;display:flex;justify-content:space-between;gap:10px}
+.plabel b{color:var(--mint);letter-spacing:.05em;font-weight:600}
+.grid{display:grid;gap:16px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:12.5px;padding:4px 10px;border-radius:7px;border:1px solid var(--line2);background:rgba(255,255,255,.02);color:var(--fg);display:inline-flex;align-items:center;gap:6px}
+.chip.t{border-color:rgba(0,229,160,.35);background:rgba(0,229,160,.07);color:var(--mint)}
+.chip.p{border-color:rgba(63,200,255,.35);background:rgba(63,200,255,.07);color:var(--cyan)}
+.chip.ok{border-color:rgba(0,229,160,.4);background:rgba(0,229,160,.1);color:var(--ok)}
+.chip.part{border-color:rgba(246,176,60,.45);background:rgba(246,176,60,.1);color:var(--warn)}
+.chip.miss{border-color:rgba(255,95,109,.45);background:rgba(255,95,109,.1);color:var(--bad)}
+.chip button{background:none;border:0;color:var(--bad);cursor:pointer;padding:0 0 0 2px;font-size:14px;line-height:1}
+.chip small{font-family:var(--f-mono);font-size:10.5px;opacity:.75}
+.view{padding-block:34px 70px}
+.view[hidden]{display:none!important}
+.fade-in{animation:fadein .5s ease both}
+@keyframes fadein{from{opacity:.001;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- cover ---------- */
+.cover{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+#portal{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cover .wrap{position:relative;display:grid;grid-template-columns:1.25fr 1fr;gap:40px;padding-block:56px 48px;align-items:center}
+.cover h1{font-size:clamp(46px,8vw,104px);line-height:.92}
+.cover h1 em{color:var(--mint);font-style:italic}
+.cover .sub{font-size:17px;color:var(--muted);max-width:56ch;margin-top:18px}
+.typer{font-family:var(--f-mono);color:var(--portal);font-size:13px;min-height:1.6em;margin-top:16px}
+.typer::after{content:"▌";animation:blink 1s steps(1) infinite;margin-left:2px;color:var(--mint)}
+@keyframes blink{50%{opacity:0}}
+.team{background:rgba(12,19,36,.82);border:1px solid var(--line2);border-radius:16px;padding:22px;backdrop-filter:blur(6px)}
+.team ol{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
+.team li{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.015)}
+.team li .av{width:34px;height:34px;font-size:12px}
+.team li span{font-weight:700;font-size:13.5px;letter-spacing:.02em}
+.team .meta{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line2);display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.team .meta b{color:var(--fg);font-weight:500}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+.section-head p{max-width:62ch}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.kpi{padding:16px 18px}
+.kpi .n{font-family:var(--f-display);font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12.5px;color:var(--muted);margin-top:6px}
+.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.chart-box{position:relative;height:280px}
+.chart-note{font-size:12.5px;color:var(--muted);margin-top:10px;min-height:1.5em}
+.iters{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+.iter{position:relative}
+.iter .num{font-family:var(--f-mono);font-size:11px;color:var(--dim)}
+.iter.now{border-color:rgba(255,154,60,.55);box-shadow:0 0 0 1px rgba(255,154,60,.15),0 0 40px rgba(255,154,60,.08)}
+.iter.now .num{color:var(--portal)}
+.iter ul{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:13.5px;display:grid;gap:4px}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.flow .node{font-family:var(--f-mono);font-size:11.5px;padding:8px 11px;border-radius:9px;border:1px solid var(--line2);background:var(--bg2)}
+.flow .node.ai{border-color:rgba(255,154,60,.6);color:var(--portal)}
+.flow .node.py{border-color:rgba(63,200,255,.5);color:var(--cyan)}
+.flow .node.out{border-color:rgba(0,229,160,.5);color:var(--mint)}
+.flow .arr{color:var(--dim)}
+
+/* ---------- login ---------- */
+.login{display:grid;grid-template-columns:1fr 420px;gap:40px;align-items:center;min-height:70vh}
+.login form{display:grid;gap:14px}
+.field{display:grid;gap:6px}
+.field label{font-size:12px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em}
+.input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:11px 13px;outline:none;transition:border-color .2s, box-shadow .2s}
+.input:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(0,229,160,.15)}
+.input.typing{box-shadow:0 0 0 3px rgba(255,154,60,.22),0 0 18px rgba(255,154,60,.25);border-color:var(--portal)}
+.hint{font-size:12.5px;color:var(--muted);border:1px dashed var(--line2);border-radius:10px;padding:10px 12px;font-family:var(--f-mono)}
+.err{color:var(--bad);font-size:13px;min-height:1.2em}
+.scan{position:relative;overflow:hidden}
+.scan::after{content:"";position:absolute;left:0;right:0;height:60px;top:-60px;background:linear-gradient(180deg,transparent,rgba(0,229,160,.08),transparent);animation:scan 3.2s linear infinite}
+@keyframes scan{to{top:110%}}
+
+/* ---------- bank ---------- */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.filters .input{max-width:320px}
+select.input{max-width:220px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.ecard{cursor:pointer;transition:border-color .2s, transform .2s;display:grid;gap:12px;text-align:left}
+.ecard:hover{border-color:var(--mint);transform:translateY(-2px)}
+.ecard .top{display:flex;gap:12px;align-items:center}
+.ecard .av{width:42px;height:42px;font-size:14px}
+.ecard .nm{font-weight:700}
+.ecard .rl{font-size:12.5px;color:var(--mint)}
+.ecard .best{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;gap:10px}
+.ring{--v:50;--c:var(--warn);width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--c) calc(var(--v)*1%),var(--line) 0);flex:none}
+.ring span{width:42px;height:42px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;font-weight:600;color:var(--c)}
+.ring.lg{width:120px;height:120px}
+.ring.lg span{width:100px;height:100px;font-size:26px;font-family:var(--f-display)}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(3,6,14,.65);z-index:60;backdrop-filter:blur(3px)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(720px,100%);background:var(--bg2);border-left:1px solid var(--line2);z-index:61;overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 22px) 22px calc(env(safe-area-inset-bottom,0px) + 30px);animation:slide .35s ease}
+@keyframes slide{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}
+.drawer .x{position:sticky;top:0;float:right;z-index:2}
+.pot-list{display:grid;gap:10px}
+.pot{display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);cursor:pointer}
+.pot:hover{border-color:var(--mint)}
+.pot .bar2{grid-column:1/-1;height:6px;border-radius:9px;background:var(--line);overflow:hidden}
+.pot .bar2 i{display:block;height:100%;border-radius:9px;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.pot .rn{font-weight:700;font-size:14px}
+.pot .pj{font-size:12px;color:var(--muted)}
+.pot .sc{font-family:var(--f-mono);font-weight:600}
+.badge{font-family:var(--f-mono);font-size:10.5px;padding:3px 8px;border-radius:6px;border:1px solid}
+.b-ready{color:var(--ok);border-color:rgba(0,229,160,.45);background:rgba(0,229,160,.08)}
+.b-pot{color:var(--warn);border-color:rgba(246,176,60,.45);background:rgba(246,176,60,.08)}
+.b-train{color:var(--portal);border-color:rgba(255,154,60,.45);background:rgba(255,154,60,.08)}
+.b-gap{color:var(--bad);border-color:rgba(255,95,109,.45);background:rgba(255,95,109,.08)}
+
+/* ---------- analyze stepper ---------- */
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:26px}
+.steps span{font-size:12.5px;padding:6px 12px;border-radius:999px;color:var(--dim);border:1px solid var(--line);display:inline-flex;gap:7px;align-items:center}
+.steps span i{font-style:normal;font-family:var(--f-mono);font-size:10.5px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--line)}
+.steps span.on{background:var(--mint);color:#04140e;font-weight:700;border-color:var(--mint)}
+.steps span.on i{background:#04140e;color:var(--mint)}
+.steps span.done{color:var(--mint);border-color:rgba(0,229,160,.35)}
+.steps span.done i{background:var(--mint);color:#04140e}
+.drop{border:1.5px dashed var(--line2);border-radius:16px;padding:44px 20px;text-align:center;cursor:pointer;transition:border-color .2s, background .2s;background:var(--bg2);display:grid;gap:6px;justify-items:center}
+.drop:hover,.drop.over{border-color:var(--mint);background:rgba(0,229,160,.04)}
+.drop.ready{border-color:var(--mint);border-style:dashed}
+.drop .big{font-size:30px}
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.feat .panel{padding:14px;text-align:center;font-size:12.5px;color:var(--muted)}
+.feat b{display:block;color:var(--fg);font-size:13.5px;margin-bottom:3px}
+.term{background:#050912;border:1px solid var(--line2);border-radius:14px;padding:18px;font-family:var(--f-mono);font-size:12.5px;line-height:1.75;min-height:290px;overflow:auto}
+.term .ok{color:var(--mint)}.term .ai{color:var(--portal)}.term .py{color:var(--cyan)}.term .dm{color:var(--dim)}
+.progress{height:5px;background:var(--line);border-radius:9px;overflow:hidden;margin-top:14px}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--mint),var(--portal));transition:width .35s}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{background:none;border:1px solid var(--line2);color:var(--muted);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:12.5px}
+.tabs button.on{border-color:var(--mint);color:var(--mint)}
+pre.code{margin:0;background:#050912;border:1px solid var(--line);border-radius:12px;padding:16px;font-family:var(--f-mono);font-size:12px;line-height:1.6;overflow:auto;max-height:430px;color:#c8d3ea;white-space:pre}
+.k{color:var(--cyan)}.s{color:var(--mint)}.n{color:var(--portal2)}.c{color:var(--dim)}.kw{color:var(--portal)}
+.prof{display:grid;grid-template-columns:300px 1fr;gap:16px}
+.prof>.grid{align-content:start}
+.who{align-content:start}
+.prof .who{display:grid;gap:4px}
+.prof .who .av{width:60px;height:60px;font-size:20px;margin-bottom:8px}
+.edit-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.edit-row .input{padding:7px 10px;font-size:13px}
+.edit-row .input.sm{width:78px}
+.edit-row .input.md{flex:1;min-width:130px}
+.warnbox{border:1px solid rgba(246,176,60,.45);background:rgba(246,176,60,.07);color:var(--warn);padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px}
+.roles{display:grid;gap:10px}
+.rolepick{display:grid;grid-template-columns:1fr auto;gap:8px 14px;align-items:center;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);cursor:pointer;text-align:left}
+.rolepick:hover{border-color:var(--mint)}
+.calc{display:grid;justify-items:center;gap:18px;padding:50px 10px;text-align:center}
+.calc .duo{display:flex;align-items:center;gap:24px;flex-wrap:wrap;justify-content:center}
+.calc .duo .av{width:64px;height:64px;font-size:20px}
+.res-head{display:flex;justify-content:space-between;gap:20px;align-items:center;flex-wrap:wrap}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.gaprow{display:grid;grid-template-columns:150px 1fr 80px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.gaprow:last-child{border-bottom:0}
+.gaprow .nm{font-weight:700;font-size:13.5px;text-align:right}
+.gaprow .trk{position:relative;height:8px;background:var(--line);border-radius:9px}
+.gaprow .trk i{position:absolute;left:0;top:0;bottom:0;border-radius:9px;transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+.gaprow .trk u{position:absolute;top:-5px;bottom:-5px;width:2px;background:#fff;border-radius:2px}
+.gaprow .st{font-family:var(--f-mono);font-size:11px;text-align:right}
+.gaprow .det{grid-column:2/-1;font-family:var(--f-mono);font-size:11px;color:var(--dim);margin-top:-4px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.verdict{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:stretch;margin-top:16px}
+.plan-k{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.plan-k .panel{padding:12px;text-align:center}
+.plan-k .n{font-family:var(--f-display);font-size:30px;line-height:1}
+.acc{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.acc>button{width:100%;display:flex;gap:10px;align-items:center;background:none;border:0;padding:14px 16px;cursor:pointer;text-align:left}
+.acc>button b{flex:1}
+.acc .body{padding:0 16px 14px;display:grid;gap:10px}
+.course{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+.course .cn{font-weight:700;font-size:14px}
+.course .cm{font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.enrolled{color:var(--mint);font-family:var(--f-mono);font-size:12px}
+
+/* ---------- projects & matrix ---------- */
+.proj{display:grid;gap:12px}
+.proj-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.proj .dates{font-family:var(--f-mono);font-size:11px;color:var(--dim)}
+.st-act{color:var(--mint);border-color:rgba(0,229,160,.45);background:rgba(0,229,160,.08)}
+.st-prox{color:var(--warn);border-color:rgba(246,176,60,.45);background:rgba(246,176,60,.08)}
+.st-plan{color:var(--cyan);border-color:rgba(63,200,255,.45);background:rgba(63,200,255,.08)}
+.role-box{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;background:var(--bg2)}
+.top3{display:flex;gap:8px;flex-wrap:wrap}
+.top3 button{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line2);border-radius:999px;padding:4px 10px 4px 4px;cursor:pointer;font-size:12.5px}
+.top3 button:hover{border-color:var(--mint)}
+.top3 .av{width:24px;height:24px;font-size:9.5px}
+.mx-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+table.mx{border-collapse:separate;border-spacing:3px;min-width:900px;width:100%;font-size:12.5px;padding:6px}
+table.mx th{font-weight:500;color:var(--muted);padding:8px 6px;text-align:left;vertical-align:bottom}
+table.mx thead th{font-size:11px;line-height:1.25;min-width:84px}
+table.mx thead th small{display:block;color:var(--dim);font-family:var(--f-mono);font-size:9.5px}
+table.mx td.cell{text-align:center;font-family:var(--f-mono);font-weight:600;border-radius:7px;padding:9px 4px;cursor:pointer;font-variant-numeric:tabular-nums;transition:transform .15s}
+table.mx td.cell:hover{transform:scale(1.08);outline:1px solid #fff}
+table.mx tbody th{white-space:nowrap;color:var(--fg)}
+table.mx tbody th small{display:block;color:var(--dim);font-size:11px}
+
+/* ---------- arch / refs ---------- */
+.arch{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ep{display:grid;gap:8px;font-family:var(--f-mono);font-size:12.5px}
+.ep div{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:8px;background:var(--bg2);border:1px solid var(--line);flex-wrap:wrap}
+.ep b{color:var(--portal);min-width:46px}
+.refs p{padding-left:2.2em;text-indent:-2.2em;margin-bottom:14px;max-width:80ch}
+.quote{border-left:3px solid var(--portal);padding:6px 0 6px 16px;font-family:var(--f-display);font-size:24px;line-height:1.25;color:var(--fg);margin:6px 0 10px;max-width:46ch}
+.foot{border-top:1px solid var(--line);padding-block:22px;font-size:12px;color:var(--dim);text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:translateX(-50%);background:var(--panel);border:1px solid var(--mint);color:var(--fg);padding:10px 16px;border-radius:10px;z-index:80;font-size:13.5px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* splash */
+#splash{position:fixed;inset:0;z-index:100;background:radial-gradient(circle at 50% 42%,#14223f 0,#070b16 62%);display:grid;place-items:center;overflow:hidden;transition:opacity .8s ease, visibility .8s}
+#splash.out{opacity:0;visibility:hidden}
+#splash[hidden]{display:none}
+.sp-inner{display:grid;justify-items:center;gap:20px;text-align:center;padding:20px;position:relative;z-index:1}
+.sp-ring{position:relative;width:min(220px,56vw);aspect-ratio:1;max-width:100%;display:grid;place-items:center}
+.sp-ring::before,.sp-ring::after,.sp-ring i{content:"";position:absolute;inset:0;border-radius:50%}
+.sp-ring::before{border:2px dashed rgba(255,154,60,.75);animation:spin 9s linear infinite;box-shadow:0 0 60px rgba(255,154,60,.25),inset 0 0 40px rgba(255,154,60,.18)}
+.sp-ring::after{inset:16px;border:3px solid transparent;border-top-color:var(--mint);border-left-color:var(--mint);animation:spin 1.4s linear infinite reverse}
+.sp-ring i{inset:34px;border:1px solid rgba(63,200,255,.5);animation:spin 4s linear infinite}
+.sp-ring b{width:64px;height:64px;border-radius:16px;background:var(--mint);color:#04140e;display:grid;place-items:center;font-family:var(--f-mono);font-size:30px;box-shadow:0 0 40px rgba(0,229,160,.5)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sp-bar{width:min(340px,78vw);height:4px;background:var(--line);border-radius:9px;overflow:hidden}
+.sp-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--mint),var(--portal));transition:width .45s ease}
+.sp-msg{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);min-height:1.5em}
+.start-btn{font-family:var(--f-mono);letter-spacing:.32em;font-weight:600;font-size:15px;padding:17px 40px 17px 46px;border-radius:999px;border:1px solid var(--portal);background:rgba(255,154,60,.1);color:var(--portal2);cursor:pointer;animation:pulse 1.8s ease-in-out infinite, popin .6s cubic-bezier(.2,1.4,.4,1) both;transition:background .2s,color .2s}
+.start-btn:hover{background:var(--portal);color:#1d0d00}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,154,60,.5)}50%{box-shadow:0 0 0 16px rgba(255,154,60,0),0 0 50px rgba(255,154,60,.35)}}
+@keyframes popin{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+/* descriptivo */
+.why{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.why h3{margin:6px 0 8px}
+.why p{color:var(--muted);font-size:14px}
+.how{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.how>div{padding:20px;border-right:1px solid var(--line);position:relative;min-width:0}
+.how>div:last-child{border-right:0}
+.how .sn{position:absolute;top:12px;right:14px;font-family:var(--f-mono);font-size:26px;color:var(--line2)}
+.how b{display:block;margin:10px 0 6px}
+.how p{font-size:13px;color:var(--muted)}
+.how .ic{font-size:22px}
+.get{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.get p{font-size:13.5px;color:var(--muted);margin-top:6px}
+.center-head{text-align:center;margin:56px 0 22px}
+/* experiencia */
+.tl{display:grid;gap:14px}
+.tl .it{border-left:2px solid var(--line2);padding:2px 0 2px 14px;display:grid;gap:3px}
+.tl .it b{font-size:14.5px}
+.tl .it .co{color:var(--mint);font-size:13px}
+.tl .it .yr{font-family:var(--f-mono);font-size:11.5px;color:var(--dim)}
+.tl .it .del{justify-self:start;background:none;border:1px solid rgba(255,95,109,.4);color:var(--bad);border-radius:7px;padding:2px 9px;font-size:12px;cursor:pointer;margin-top:4px}
+.exp-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line2)}
+.exp-form .full{grid-column:1/-1}
+.exp-form .input{padding:8px 10px;font-size:13px}
+.exp-form label.ck{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.diag{display:grid;gap:8px}
+.diag li{font-size:14px}
+.diag ul{margin:0;padding-left:20px;display:grid;gap:8px}
+.links{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--dim)}
+.links a{font-size:12px;border:1px solid var(--line2);border-radius:999px;padding:3px 10px;text-decoration:none;color:var(--fg)}
+.links a:hover{border-color:var(--mint);color:var(--mint)}
+.btn.link{text-decoration:none;padding:7px 14px;border-color:var(--mint);color:var(--mint);background:transparent}
+@media (max-width:980px){.why,.get{grid-template-columns:1fr}.how{grid-template-columns:1fr 1fr}.how>div:nth-child(2){border-right:0}.how>div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+@media (max-width:560px){.how{grid-template-columns:1fr}.how>div{border-right:0;border-bottom:1px solid var(--line)}.exp-form{grid-template-columns:1fr}}
+@media (max-width:980px){
+  .cover .wrap,.login,.prof,.arch{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .charts,.iters,.two{grid-template-columns:1fr}
+  .nav{margin-left:0;order:3;width:100%;overflow-x:auto;flex-wrap:nowrap}
+  .nav button{white-space:nowrap}
+}
+@media (max-width:560px){
+  .feat,.plan-k{grid-template-columns:1fr}
+  .verdict{grid-template-columns:1fr}
+  .gaprow{grid-template-columns:96px 1fr 62px}
+  .admin-chip span{display:none}
+  .chart-box{height:240px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div id="splash" role="dialog" aria-label="Pantalla de inicio">
+  <div class="sp-inner">
+    <p class="eyebrow">Universidad Católica de Colombia · Iteración 03</p>
+    <div class="sp-ring" aria-hidden="true"><i></i><b>M</b></div>
+    <h1 style="font-size:clamp(42px,8vw,78px);line-height:.95">Talent<em style="color:var(--mint)">Match</em></h1>
+    <div class="sp-bar"><i id="spBar"></i></div>
+    <p class="sp-msg" id="spMsg" aria-live="polite">Iniciando…</p>
+    <button class="start-btn" id="startBtn" hidden>▶ INICIAR</button>
+    <div id="spNote" hidden style="display:grid;gap:8px;justify-items:center">
+      <label for="spAudio" class="icon-btn" id="spAudioLbl" style="cursor:pointer">🎵 Cargar canción "Portals" (MP3)</label>
+      <input type="file" id="spAudio" accept="audio/*,.mp3" class="sr">
+      <p class="muted" style="font-size:12px">Sube el volumen: la misión tiene banda sonora</p>
+    </div>
+  </div>
+</div>
+
+<header class="bar">
+  <div class="wrap">
+    <button class="logo" id="goHome" aria-label="Ir a la portada"><i>M</i>TalentMatch</button>
+    <span class="tag it">Iteración 03</span>
+    <nav class="nav" id="nav" aria-label="Secciones"></nav>
+    <div class="tools">
+      <button class="icon-btn" id="musicBtn" aria-pressed="false" title="Música de fondo"><span class="eq"><b></b><b></b><b></b></span><span id="musicLbl">Música</span></button>
+      <div class="admin-chip" id="adminChip" hidden></div>
+    </div>
+  </div>
+</header>
+
+<!-- ========== MÚSICA ========== -->
+<div class="scrim" id="musicScrim" hidden></div>
+<div class="drawer" id="musicDrawer" hidden role="dialog" aria-label="Música de fondo" style="width:min(460px,100%)">
+  <button class="icon-btn x" data-close="music">Cerrar ✕</button>
+  <p class="eyebrow">Banda sonora</p>
+  <h3 style="margin:8px 0 12px">Ambiente de misión</h3>
+  <p class="muted" style="font-size:14px">La pista <b style="color:var(--fg)">"Portals" (Avengers: Endgame) en versión Cinematic Symphony Orchestra</b> tiene derechos de autor, así que no viene incrustada. Cárgala aquí desde tu equipo (MP3) y sonará en bucle. La página la recuerda en este navegador, así que la próxima vez sonará sola al pulsar INICIAR. En la versión de GitHub también suena si pones el archivo en <span class="mono">assets/portals.mp3</span>.</p>
+  <div class="grid" style="margin-top:18px">
+    <label class="btn portal" for="audioFile">Cargar mi pista "Portals"</label>
+    <input type="file" id="audioFile" accept="audio/*" class="sr">
+    <button class="btn ghost" id="stopBtn">Silenciar</button>
+    <p class="hint" id="trackInfo">Sin pista cargada.</p>
+    <a class="muted" style="font-size:13px" href="https://www.youtube.com/results?search_query=Portals+Avengers+Endgame+Cinematic+Symphony+Orchestra" target="_blank" rel="noopener">Buscar la pista en YouTube ↗</a>
+  </div>
+</div>
+
+<main>
+<!-- ========== PORTADA ========== -->
+<section class="view" id="v-cover" style="padding:0">
+  <div class="cover">
+    <canvas id="portal" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">CV Match · TalentMatch · Universidad Católica de Colombia</p>
+        <h1 style="margin-top:14px">Conecta tu talento<br>con los <em>proyectos TI</em></h1>
+        <p class="sub">Plataforma interna para RR. HH. y PMO que lee hojas de vida en PDF con IA, las convierte en un perfil JSON ATS con habilidades técnicas y <b style="color:var(--fg)">power skills</b>, y calcula en Python el porcentaje de compatibilidad de cada empleado con los roles abiertos en los proyectos TI de la empresa. Muestra las brechas y propone cursos y certificaciones para cerrarlas.</p>
+        <p class="typer" id="typer" aria-live="polite"></p>
+        <div class="cta-row">
+          <button class="btn pri" id="toLogin">Comenzar análisis →</button>
+          <button class="btn ghost" id="toCharts">Ver indicadores</button>
+        </div>
+      </div>
+      <aside class="team">
+        <p class="eyebrow">Equipo de desarrollo</p>
+        <ol id="teamList"></ol>
+        <div class="meta">
+          <div>Docente: <b>Juan Carlos Navarro Beltrán</b></div>
+          <div>Electiva de programa: <b>Problem Discovery &amp; Solution Design with Artificial Intelligence</b></div>
+          <div>Entrega: <b>Tercera iteración · octubre de 2026</b></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="wrap" style="padding-block:48px 0">
+    <div class="section-head"><div><p class="eyebrow">Para qué sirve y por qué</p><h2 style="margin-top:8px">El talento ya está en casa</h2></div><p class="muted">TalentMatch le muestra a RR. HH. y a la PMO quién puede ocupar cada puesto de los proyectos de la empresa, qué le falta y cómo cerrarlo.</p></div>
+    <div class="why">
+      <div class="panel"><p class="eyebrow" style="color:var(--bad)">El problema</p><h3>Talento invisible</h3><p>Las empresas tienen empleados con experiencia y power skills que nadie ve a la hora de armar equipos. Los proyectos TI se asignan por intuición o contratando afuera, y las brechas aparecen cuando el proyecto ya arrancó.</p></div>
+      <div class="panel"><p class="eyebrow" style="color:var(--portal)">La solución</p><h3>Un match medible</h3><p>La IA lee la hoja de vida, la convierte en un perfil JSON ATS y Python la compara contra cada rol: 70 % habilidades técnicas (nivel y años de experiencia) y 30 % power skills. El resultado es un porcentaje que se puede explicar.</p></div>
+      <div class="panel"><p class="eyebrow">Para quién</p><h3>Decisiones con datos</h3><p>RR. HH. y PMO ven el potencial de cada empleado en todos los puestos y asignan con criterio. El empleado recibe una ruta concreta de cursos y certificaciones para crecer dentro de la empresa.</p></div>
+    </div>
+    <div class="center-head"><p class="eyebrow" style="color:var(--dim)">Cómo funciona</p></div>
+    <div class="how">
+      <div><span class="sn">01</span><span class="ic">📄</span><b>Sube tu CV</b><p>Carga la hoja de vida en PDF. Claude Opus 5.5 API extrae toda la información de forma automática.</p></div>
+      <div><span class="sn">02</span><span class="ic">✏️</span><b>Verifica y edita</b><p>Revisa el perfil extraído y corrige skills, power skills y experiencia laboral antes de continuar.</p></div>
+      <div><span class="sn">03</span><span class="ic">🏗️</span><b>Explora proyectos</b><p>Ve los proyectos TI activos de la empresa y los roles que necesita cada uno.</p></div>
+      <div><span class="sn">04</span><span class="ic">🎯</span><b>Recibe tu plan</b><p>Conoce tu % de compatibilidad por rol y obtén cursos para cerrar cada brecha.</p></div>
+    </div>
+    <div class="center-head"><p class="eyebrow" style="color:var(--dim)">Qué obtienes</p></div>
+    <div class="get">
+      <div class="panel"><span style="font-size:22px">📊</span><b style="display:block;margin-top:8px">Compatibilidad por rol</b><p>Un porcentaje que mide tus habilidades técnicas y tu experiencia demostrable frente a lo que exige cada rol.</p></div>
+      <div class="panel"><span style="font-size:22px">🔍</span><b style="display:block;margin-top:8px">Análisis de brecha</b><p>Qué skills te faltan y en cuáles tu nivel o tus años de experiencia no alcanzan el mínimo del proyecto.</p></div>
+      <div class="panel"><span style="font-size:22px">📚</span><b style="display:block;margin-top:8px">Plan de capacitación</b><p>Cursos y certificaciones por cada brecha, con proveedor, duración, nivel y enlace directo a Coursera, Udemy o Platzi.</p></div>
+    </div>
+  </div>
+
+  <div class="wrap" style="padding-block:56px 30px" id="chartsAnchor">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Panorama del talento · datos ficticios</p>
+        <h2 style="margin-top:8px">Lo único que importa: el match</h2>
+      </div>
+      <p class="muted">Indicadores calculados en vivo con el mismo motor de matching que usa la plataforma. Toca las barras y los segmentos para ver el detalle.</p>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="charts">
+      <div class="panel"><div class="plabel">Mejor encaje por proyecto <b>clic para top 3</b></div><div class="chart-box"><canvas id="chProj"></canvas></div><p class="chart-note" id="noteProj">Selecciona un proyecto.</p></div>
+      <div class="panel"><div class="plabel">Power skills del banco de CV <b>promedio</b></div><div class="chart-box"><canvas id="chPower"></canvas></div><p class="chart-note">Pensamiento crítico, empatía y comunicación: las que la IA no reemplaza.</p></div>
+      <div class="panel"><div class="plabel">Oferta vs demanda de skills técnicas</div><div class="chart-box"><canvas id="chSupply"></canvas></div><p class="chart-note">Demanda = roles que la piden · Oferta = empleados que la tienen al nivel requerido.</p></div>
+      <div class="panel"><div class="plabel">Empleados por nivel de potencial <b>clic para filtrar</b></div><div class="chart-box"><canvas id="chPot"></canvas></div><p class="chart-note" id="notePot">Según su mejor rol disponible.</p></div>
+    </div>
+
+    <div class="section-head" style="margin-top:48px">
+      <div><p class="eyebrow">Evolución del producto</p><h2 style="margin-top:8px">Tres iteraciones</h2></div>
+      <div class="flow" aria-label="Flujo de la solución">
+        <span class="node">CV PDF</span><span class="arr">→</span><span class="node ai">Claude Opus 5.5 API</span><span class="arr">→</span><span class="node">JSON ATS</span><span class="arr">→</span><span class="node py">Python · matching</span><span class="arr">→</span><span class="node out">% · brechas · cursos</span>
+      </div>
+    </div>
+    <div class="iters">
+      <div class="panel iter"><span class="num">ITERACIÓN 01 · PROTOTIPO FIGMA</span><h3 style="margin-top:6px">Flujo base</h3><ul><li>Carga de CV en PDF y extracción con Gemini API</li><li>Proyectos TI con % de mejor encaje</li><li>Skills faltantes y plan de cursos</li></ul></div>
+      <div class="panel iter"><span class="num">ITERACIÓN 02 · FEEDBACK JURISPRUDENCIA</span><h3 style="margin-top:6px">Contexto y control</h3><ul><li>Página de bienvenida que explica la herramienta</li><li>Edición del perfil extraído</li><li>Brecha por nivel y años de experiencia</li></ul></div>
+      <div class="panel iter now"><span class="num">ITERACIÓN 03 · ESTA VERSIÓN</span><h3 style="margin-top:6px">Vista del administrador</h3><ul><li>Inicio de sesión de RR. HH./PMO</li><li>Banco de CV y matriz de potencial por puesto</li><li>Power skills en el match y en el plan</li><li>Motor con Claude Opus 5.5 + Python</li><li>Experiencia laboral editable que suma años por tecnología</li><li>Recomendaciones con enlaces a Coursera, Udemy y Platzi</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== LOGIN ========== -->
+<section class="view" id="v-login" hidden>
+  <div class="wrap login">
+    <div>
+      <p class="eyebrow">Acceso restringido · RR. HH. y PMO</p>
+      <h2 style="margin-top:10px">Centro de mando del talento</h2>
+      <p class="muted" style="margin-top:14px;max-width:52ch">Desde aquí el administrador consulta el banco de hojas de vida, analiza nuevos CV y descubre en qué puestos de los proyectos de la empresa rinde más cada empleado.</p>
+      <div class="flow" style="margin-top:22px"><span class="node">🔒 Sesión cifrada</span><span class="node">12 perfiles</span><span class="node">6 proyectos</span><span class="node">9 roles</span></div>
+    </div>
+    <div class="panel scan">
+      <form id="loginForm" autocomplete="off" novalidate>
+        <div class="field"><label for="lgUser">CORREO CORPORATIVO</label><input class="input" id="lgUser" type="email" placeholder="nombre@novabanca.co"></div>
+        <div class="field"><label for="lgPass">CONTRASEÑA</label><input class="input" id="lgPass" type="password" placeholder="••••••••"></div>
+        <p class="err" id="lgErr" role="alert"></p>
+        <button class="btn pri" type="submit">Iniciar sesión</button>
+        <button class="btn ghost" type="button" id="autofill">Autocompletar credenciales demo</button>
+        <p class="hint">Demo · admin.rrhh@novabanca.co / TalentMatch2026</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ========== BANCO DE CV ========== -->
+<section class="view" id="v-bank" hidden>
+  <div class="wrap">
+    <div class="section-head">
+      <div><p class="eyebrow">Banco de CV</p><h2 style="margin-top:8px">Empleados y su potencial</h2></div>
+      <p class="muted">Cada tarjeta muestra el rol donde la persona tiene mayor compatibilidad. Ábrela para ver sus power skills y el ranking completo de puestos.</p>
+    </div>
+    <div class="filters">
+      <input class="input" id="q" placeholder="Buscar por nombre, cargo o skill…" aria-label="Buscar">
+      <select class="input" id="fPot" aria-label="Filtrar por potencial">
+        <option value="">Todos los niveles</option><option value="ready">Listo (≥ 80%)</option><option value="pot">Con potencial (60–79%)</option><option value="train">Requiere capacitación (40–59%)</option><option value="gap">Brecha alta (&lt; 40%)</option>
+      </select>
+      <button class="btn ghost" id="toAnalyze2">+ Analizar nuevo CV</button>
+    </div>
+    <div class="cards" id="cards"></div>
+  </div>
+</section>
+
+<!-- ========== ANALIZAR ========== -->
+<section class="view" id="v-analyze" hidden>
+  <div class="wrap">
+    <div class="steps" id="steps"></div>
+    <div id="stage"></div>
+  </div>
+</section>
+
+<!-- ========== PROYECTOS ========== -->
+<section class="view" id="v-projects" hidden>
+  <div class="wrap">
+    <div class="section-head">
+      <div><p class="eyebrow">Proyectos TI activos</p><h2 style="margin-top:8px">Roles abiertos y mejores candidatos</h2></div>
+      <p class="muted">Para cada rol, el motor ordena el banco de CV y propone los tres empleados con mayor compatibilidad.</p>
+    </div>
+    <div class="grid" id="projList"></div>
+  </div>
+</section>
+
+<!-- ========== MATRIZ ========== -->
+<section class="view" id="v-matrix" hidden>
+  <div class="wrap">
+    <div class="section-head">
+      <div><p class="eyebrow">Matriz de potencial</p><h2 style="margin-top:8px">Empleado × puesto</h2></div>
+      <p class="muted">Cada celda es el % de compatibilidad (70 % técnico, 30 % power skills). Toca una celda para abrir el análisis detallado.</p>
+    </div>
+    <div class="legend"><span><i style="background:#00e5a0"></i>≥ 80 Listo</span><span><i style="background:#f6b03c"></i>60–79 Con potencial</span><span><i style="background:#ff9a3c"></i>40–59 Capacitación</span><span><i style="background:#ff5f6d"></i>&lt; 40 Brecha alta</span></div>
+    <div class="mx-wrap"><table class="mx" id="mx"></table></div>
+  </div>
+</section>
+
+<!-- ========== ARQUITECTURA ========== -->
+<section class="view" id="v-arch" hidden>
+  <div class="wrap">
+    <div class="section-head">
+      <div><p class="eyebrow">Cómo funciona por dentro</p><h2 style="margin-top:8px">Motor de matching</h2></div>
+      <p class="muted">Esta versión simula el backend en el navegador. La siguiente iteración conectará los datasets .csv mediante una API REST con el mismo contrato.</p>
+    </div>
+    <div class="arch">
+      <div class="panel"><div class="plabel">match_engine.py <b>Python 3.12</b></div><pre class="code" id="pyCode"></pre></div>
+      <div class="grid">
+        <div class="panel"><div class="plabel">Fórmula de compatibilidad</div>
+          <p class="muted" style="font-size:14px">Por cada skill técnica requerida: crédito = 0,6 × min(1, nivel / nivel requerido) + 0,4 × min(1, años / años requeridos). Si no la tiene, crédito 0. Para power skills: min(1, nivel / requerido).</p>
+          <p style="margin-top:10px;font-family:var(--f-mono);font-size:13px;color:var(--mint)">match = 70 % · técnico + 30 % · power skills</p>
+        </div>
+        <div class="panel"><div class="plabel">API propuesta · iteración 04 <b>FastAPI + CSV</b></div>
+          <div class="ep">
+            <div><b>POST</b>/api/cv/parse <span class="muted">PDF → Claude Opus 5.5 → JSON ATS</span></div>
+            <div><b>GET</b>/api/empleados <span class="muted">lee empleados.csv</span></div>
+            <div><b>GET</b>/api/proyectos <span class="muted">lee proyectos.csv y roles.csv</span></div>
+            <div><b>POST</b>/api/match <span class="muted">CV JSON vs oferta JSON → %</span></div>
+            <div><b>GET</b>/api/cursos?skill= <span class="muted">lee cursos.csv</span></div>
+          </div>
+        </div>
+        <div class="panel"><div class="plabel">Prompt de extracción <b>claude-opus-5-5</b></div><pre class="code" id="promptCode" style="max-height:220px"></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== REFERENCIAS ========== -->
+<section class="view" id="v-refs" hidden>
+  <div class="wrap">
+    <div class="section-head"><div><p class="eyebrow">Marco conceptual</p><h2 style="margin-top:8px">Power skills</h2></div></div>
+    <div class="two">
+      <div class="panel">
+        <p class="quote">El pensamiento crítico, la empatía y la comunicación son irreemplazables.</p>
+        <p class="muted" style="font-size:14px">Juliana González, de Blen360, nos aclaró que las habilidades blandas son en realidad herramientas transversales que cambian con el tiempo gracias a la neuroplasticidad (J. González, comunicación personal, 2026). Por eso TalentMatch las mide con un nivel y no como un sí o un no, y siempre propone cómo desarrollarlas.</p>
+      </div>
+      <div class="panel">
+        <p class="muted" style="font-size:14px">González Pozo (2026) describe las power skills como la evolución de las soft skills: capacidades humanas, duraderas y transferibles entre roles, que pueden entrenarse con práctica y retroalimentación, y que ganan valor frente a la automatización con IA. Entre las más demandadas cita la inteligencia emocional, la adaptabilidad, la comunicación asertiva, el liderazgo y la resolución de problemas.</p>
+      </div>
+    </div>
+    <div class="panel refs" style="margin-top:16px">
+      <div class="plabel">Referencias · APA 7</div>
+      <p>González Pozo, A. (2026, 25 de febrero). <i>Power skills: qué son, cuáles son las más demandadas y cómo desarrollarlas</i>. isEazy. https://www.iseazy.com/es/blog/power-skills/</p>
+      <p>Grupo de Jurisprudencia. (2026). <i>Retroalimentación de usabilidad del prototipo CV Match</i> [Evaluación no publicada]. Universidad Católica de Colombia.</p>
+      <p>Lozano Calderón, J. S., Rojas Villamil, A. F., López Urrego, J. S., y Romero Cajamarca, J. O. (2026). <i>CV Match: prototipo de hoja de vida</i> [Prototipo interactivo]. Figma. https://www.figma.com/make/X4BrLzRcwRFbpZESLq63D4/Prototipo-de-Hoja-de-Vida</p>
+      <p class="muted" style="font-size:12.5px;text-indent:0;padding-left:0">Nota: la comunicación personal con Juliana González (Blen360) se cita solo en el texto, como indica APA 7. Todos los empleados, proyectos y cifras de esta demo son ficticios.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-label="Perfil del empleado"></aside>
+<footer class="foot">TalentMatch · CV Match · Iteración 03 · Universidad Católica de Colombia · 2026 · Datos ficticios con fines académicos</footer>
+
+<script>
+/* ================= DATOS FICTICIOS ================= */
+const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+const TEAM=["JUAN SEBASTIÁN LOZANO CALDERÓN","ANDRÉS FAVID ROJAS VILLAMIL","JUAN SEBASTIÁN LÓPEZ URREGO","JEISON OSWALDO ROMERO CAJAMARCA"];
+const ADMIN={email:"admin.rrhh@novabanca.co",pass:"TalentMatch2026",name:"Laura Méndez",role:"Líder de Talento TI · PMO"};
+const POWER=["Pensamiento crítico","Empatía","Comunicación asertiva","Inteligencia emocional","Adaptabilidad","Liderazgo","Trabajo en equipo","Resolución de problemas","Gestión del tiempo","Creatividad","Resiliencia"];
+
+function T(s){return s.split("|").map(x=>{const[n,l,y]=x.split(":");return{n,l:+l,y:+y}})}
+function P(s){return s.split("|").map(x=>{const[n,l]=x.split(":");return{n,l:+l}})}
+let EMP=[
+ {id:"EMP-20483",name:"Valentina Torres",role:"Desarrolladora Full Stack",area:"Transformación Digital",yrs:6,city:"Bogotá",edu:"Ing. de Sistemas — U. Nacional, 2020 · Maestría en Ing. de Software — U. de los Andes, 2025",
+  tech:T("TypeScript:78:4|Node.js:72:3|PostgreSQL:65:3|Python:60:2|Docker:55:1.5|Git:85:5|REST APIs:80:4|Angular:70:2|Scrum:75:3"),power:P("Trabajo en equipo:88|Comunicación asertiva:80|Resolución de problemas:84|Adaptabilidad:76|Pensamiento crítico:72|Empatía:81")},
+ {id:"EMP-18820",name:"Mateo Rincón",role:"Ingeniero de Datos",area:"Datos & Analytics",yrs:7,city:"Medellín",edu:"Ing. Electrónica — UPB, 2018",
+  tech:T("Python:88:6|SQL:85:6|Apache Spark:74:3|Airflow:70:3|AWS S3:68:2|Kafka:52:1|PostgreSQL:80:5|Docker:60:2"),power:P("Pensamiento crítico:90|Resolución de problemas:86|Gestión del tiempo:70|Comunicación asertiva:62|Trabajo en equipo:74|Resiliencia:78")},
+ {id:"EMP-21057",name:"Daniela Prieto",role:"Científica de Datos",area:"Datos & Analytics",yrs:4,city:"Bogotá",edu:"Estadística — U. Nacional, 2021",
+  tech:T("Python:85:4|TensorFlow:72:2|MLflow:60:1|SQL:78:4|Pandas:88:4|Docker:50:1|REST APIs:55:1"),power:P("Creatividad:86|Pensamiento crítico:88|Empatía:70|Comunicación asertiva:82|Adaptabilidad:80")},
+ {id:"EMP-19334",name:"Santiago Herrera",role:"Analista SOC",area:"Seguridad de la Información",yrs:5,city:"Bogotá",edu:"Ing. de Sistemas — U. Católica de Colombia, 2020 · CompTIA Security+",
+  tech:T("SIEM (Splunk):78:3|Python:65:2|Redes TCP/IP:85:5|Linux:80:4|Gestión de vulnerabilidades:70:3|Respuesta a incidentes:72:2|AWS:45:1"),power:P("Resiliencia:88|Pensamiento crítico:84|Gestión del tiempo:80|Trabajo en equipo:72|Inteligencia emocional:76")},
+ {id:"EMP-16602",name:"Camila Ospina",role:"Líder Frontend",area:"Banca Digital",yrs:8,city:"Cali",edu:"Ing. Multimedia — U. Autónoma de Occidente, 2017",
+  tech:T("React:90:6|TypeScript:86:5|Next.js:80:3|GraphQL:68:2|Testing (Jest):75:4|Figma:70:3|Git:88:7"),power:P("Liderazgo:87|Comunicación asertiva:90|Empatía:85|Trabajo en equipo:86|Inteligencia emocional:82|Creatividad:78")},
+ {id:"EMP-17745",name:"Andrés Castaño",role:"Ingeniero DevOps",area:"Infraestructura",yrs:7,city:"Bogotá",edu:"Ing. de Telecomunicaciones — U. Distrital, 2018 · CKA",
+  tech:T("Kubernetes:82:4|Docker:88:5|Terraform:78:3|AWS:80:4|Linux:85:6|CI/CD:84:5|Redis:55:2|Python:60:3"),power:P("Resolución de problemas:85|Resiliencia:80|Adaptabilidad:78|Comunicación asertiva:60|Gestión del tiempo:75")},
+ {id:"EMP-14410",name:"Laura Benítez",role:"Arquitecta de Integración",area:"Open Banking",yrs:10,city:"Bogotá",edu:"Ing. de Sistemas — Javeriana, 2015 · Esp. Arquitectura Empresarial",
+  tech:T("REST APIs:92:8|Java:85:8|Kong / API Gateway:80:3|OAuth 2.0:82:4|Kafka:70:3|Microservicios:86:6|OpenAPI:88:5"),power:P("Liderazgo:82|Pensamiento crítico:86|Comunicación asertiva:84|Trabajo en equipo:80|Empatía:72")},
+ {id:"EMP-23118",name:"Felipe Morales",role:"Desarrollador Backend Jr.",area:"Banca Digital",yrs:2,city:"Bucaramanga",edu:"Tecnólogo en Desarrollo de Software — SENA, 2023",
+  tech:T("Node.js:60:1|JavaScript:70:2|MongoDB:55:1|Git:65:2|REST APIs:58:1"),power:P("Adaptabilidad:85|Creatividad:74|Trabajo en equipo:80|Resiliencia:70|Empatía:76")},
+ {id:"EMP-22069",name:"Natalia Vargas",role:"Ingeniera de IA",area:"Inteligencia Artificial",yrs:4,city:"Bogotá",edu:"Ing. de Sistemas — U. de los Andes, 2021",
+  tech:T("Python:86:4|LLMs / Prompting:84:2|LangChain:72:1.5|RAG:76:1.5|Docker:62:2|FastAPI:74:2|Pinecone / Vector DB:66:1"),power:P("Creatividad:88|Pensamiento crítico:85|Comunicación asertiva:78|Adaptabilidad:86|Empatía:74")},
+ {id:"EMP-20311",name:"Julián Mesa",role:"Analista QA",area:"Calidad de Software",yrs:5,city:"Pereira",edu:"Ing. de Sistemas — UTP, 2020 · ISTQB Foundation",
+  tech:T("Testing (Jest):70:3|Selenium:80:4|Cypress:72:2|Postman:82:4|SQL:60:3|Scrum:74:4"),power:P("Pensamiento crítico:80|Gestión del tiempo:84|Comunicación asertiva:76|Empatía:78|Trabajo en equipo:82")},
+ {id:"EMP-15873",name:"Sara Quintero",role:"Product Owner TI",area:"Banca Digital",yrs:9,city:"Bogotá",edu:"Administración de Empresas — U. del Rosario, 2016 · PSPO I",
+  tech:T("Scrum:88:5|Jira:85:5|Figma:64:2|SQL:50:2|Análisis de datos:66:3"),power:P("Liderazgo:88|Empatía:90|Comunicación asertiva:92|Inteligencia emocional:86|Gestión del tiempo:80|Pensamiento crítico:78")},
+ {id:"EMP-19902",name:"Diego Ramírez",role:"Ingeniero Cloud",area:"Infraestructura",yrs:5,city:"Barranquilla",edu:"Ing. de Sistemas — U. del Norte, 2020 · AWS Solutions Architect Associate",
+  tech:T("AWS:84:4|Terraform:72:2|Python:70:3|Kubernetes:58:1.5|Linux:78:4|Redes TCP/IP:70:3|Docker:76:3"),power:P("Adaptabilidad:80|Resolución de problemas:82|Trabajo en equipo:76|Resiliencia:74|Gestión del tiempo:68")}
+];
+const NOW=2026;
+const expDur=x=>Math.max(.5,((x.hasta==="Hoy"?NOW:+x.hasta)-(+x.desde)));
+function expYears(c,skill){const k=skill.toLowerCase();return(c.exp||[]).filter(x=>x.tech.some(t=>t.toLowerCase()===k)).reduce((a,x)=>a+expDur(x),0)}
+/* sincroniza: las tecnologías de la experiencia suman años y se agregan como skill si no existían */
+function syncYears(c){
+  (c.exp||[]).forEach(x=>x.tech.forEach(n=>{if(!c.tech.some(t=>t.n.toLowerCase()===n.toLowerCase()))c.tech.push({n,l:60,y:0,base:0})}));
+  c.tech.forEach(t=>{if(t.base===undefined)t.base=t.y;t.y=Math.max(t.base,expYears(c,t.n))});
+  if(c.exp&&c.exp.length){const a=Math.min(...c.exp.map(x=>+x.desde)),b=Math.max(...c.exp.map(x=>x.hasta==="Hoy"?NOW:+x.hasta));c.yrs=Math.max(1,b-a)}
+}
+const PREV={"Líder Frontend":"Desarrolladora Frontend","Arquitecta de Integración":"Desarrolladora Backend Senior","Ingeniero de Datos":"Analista de Datos","Product Owner TI":"Analista de Negocio","Ingeniero DevOps":"Administrador de Sistemas","Ingeniero Cloud":"Analista de Infraestructura","Analista SOC":"Técnico de Soporte y Redes","Científica de Datos":"Analista de BI","Ingeniera de IA":"Desarrolladora Python","Analista QA":"Tester Manual"};
+EMP.forEach((e,i)=>{
+  const f=norm(e.name.split(" ")[0])[0],l=norm(e.name.split(" ").slice(-1)[0]);
+  e.email=`${f}.${l}@novabanca.co`;e.phone=`+57 3${(i*7+10)%90+10} ${100+i*37} ${4000+i*211}`;
+  if(e.name==="Valentina Torres"){e.exp=[{cargo:"Desarrolladora Frontend",empresa:"NovaBanca — Transformación Digital",desde:2022,hasta:"Hoy",tech:["TypeScript","Angular","REST APIs","Git"]},{cargo:"Analista de Sistemas",empresa:"NovaBanca — Banca Digital",desde:2020,hasta:2022,tech:["PostgreSQL","Python","Scrum"]}]}
+  else{const cur=Math.max(1,Math.round(e.yrs*.55)),half=Math.ceil(e.tech.length/2);
+    e.exp=[{cargo:e.role,empresa:"NovaBanca — "+e.area,desde:NOW-cur,hasta:"Hoy",tech:e.tech.slice(0,half).map(t=>t.n)}];
+    if(e.yrs-cur>=1)e.exp.push({cargo:PREV[e.role]||"Analista de Sistemas",empresa:"NovaBanca — Operaciones TI",desde:NOW-e.yrs,hasta:NOW-cur,tech:e.tech.slice(half).map(t=>t.n)})}
+  e.tech.forEach(t=>t.base=t.y);syncYears(e);
+});
+const PROJ=[
+ {id:"P1",name:"Plataforma Omnicanal 2.0",area:"Banca Digital",st:"Activo",dates:"Mar 2026 → Dic 2026",desc:"Rediseño de la experiencia digital del cliente en app móvil, web y cajeros.",roles:[
+  {id:"R1",name:"Frontend Lead",vac:1,tech:T("React:80:4|TypeScript:75:3|Next.js:70:2|GraphQL:60:1|Testing (Jest):65:2"),power:P("Liderazgo:80|Comunicación asertiva:75|Empatía:70")},
+  {id:"R2",name:"Backend Engineer",vac:2,tech:T("Node.js:70:2|PostgreSQL:65:2|Docker:55:1|Kubernetes:55:1|Redis:45:1"),power:P("Resolución de problemas:75|Trabajo en equipo:70")}]},
+ {id:"P2",name:"DataLake Corporativo",area:"Datos & Analytics",st:"Activo",dates:"Ene 2026 → Sep 2026",desc:"Repositorio centralizado de datos con analítica avanzada e IA.",roles:[
+  {id:"R3",name:"Data Engineer",vac:3,tech:T("Python:75:3|PostgreSQL:60:2|Apache Spark:70:2|Kafka:60:1|AWS S3:60:1|Airflow:60:1"),power:P("Pensamiento crítico:75|Resolución de problemas:75|Gestión del tiempo:65")},
+  {id:"R4",name:"ML Engineer",vac:2,tech:T("Python:80:3|Docker:60:1|REST APIs:60:1|TensorFlow:70:2|MLflow:60:1|SQL:65:2"),power:P("Pensamiento crítico:80|Creatividad:70|Comunicación asertiva:65")}]},
+ {id:"P3",name:"API Banking Gateway",area:"Open Banking",st:"Próximo",dates:"Oct 2026 → Mar 2027",desc:"Gateway unificado de APIs para el ecosistema Open Banking y alianzas con fintechs.",roles:[
+  {id:"R5",name:"API Architect",vac:1,tech:T("REST APIs:85:5|OAuth 2.0:75:2|Kong / API Gateway:70:2|Microservicios:80:4|OpenAPI:75:2"),power:P("Liderazgo:75|Pensamiento crítico:80|Comunicación asertiva:75")}]},
+ {id:"P4",name:"Ciberdefensa SOC 360",area:"Seguridad",st:"Activo",dates:"Feb 2026 → Feb 2027",desc:"Centro de operaciones de seguridad con monitoreo 24/7 y respuesta a incidentes.",roles:[
+  {id:"R6",name:"Analista SOC N2",vac:2,tech:T("SIEM (Splunk):70:2|Respuesta a incidentes:70:2|Redes TCP/IP:75:3|Linux:70:2|Python:55:1"),power:P("Resiliencia:80|Pensamiento crítico:80|Inteligencia emocional:70")}]},
+ {id:"P5",name:"Core Cloud Migration",area:"Infraestructura",st:"Planificación",dates:"Ene 2027 → Dic 2027",desc:"Migración del core transaccional a nube híbrida con infraestructura como código.",roles:[
+  {id:"R7",name:"SRE / DevOps",vac:2,tech:T("Kubernetes:75:3|Terraform:70:2|AWS:75:3|CI/CD:75:3|Docker:70:2"),power:P("Resolución de problemas:80|Adaptabilidad:75|Comunicación asertiva:65")}]},
+ {id:"P6",name:"Asistente IA de Servicio",area:"Inteligencia Artificial",st:"Próximo",dates:"Nov 2026 → Jun 2027",desc:"Asistente conversacional con IA generativa para atención al cliente.",roles:[
+  {id:"R8",name:"LLM Engineer",vac:2,tech:T("Python:80:3|LLMs / Prompting:75:1|RAG:70:1|FastAPI:65:1|Pinecone / Vector DB:60:1"),power:P("Creatividad:75|Empatía:70|Pensamiento crítico:80")},
+  {id:"R9",name:"Product Owner IA",vac:1,tech:T("Scrum:75:3|Jira:70:2|Análisis de datos:60:2|LLMs / Prompting:50:0.5"),power:P("Liderazgo:80|Empatía:80|Comunicación asertiva:85")}]}
+];
+const ROLES=PROJ.flatMap(p=>p.roles.map(r=>({...r,project:p})));
+
+const C=(n,prov,h,lvl,t="Curso")=>({n,prov,h,lvl,t});
+const COURSES={
+ "React":[C("React — The Complete Guide","Udemy",48,"Intermedio")],"TypeScript":[C("TypeScript para equipos frontend","Platzi",20,"Intermedio")],
+ "Next.js":[C("Next.js App Router en producción","Vercel Learn",14,"Intermedio")],"GraphQL":[C("GraphQL con Apollo","Apollo Odyssey",12,"Básico")],
+ "Testing (Jest)":[C("Testing JavaScript con Jest","Testing Academy",16,"Intermedio")],"Node.js":[C("OpenJS Node.js Application Developer (JSNAD)","Linux Foundation",30,"Avanzado","Certificación")],
+ "PostgreSQL":[C("PostgreSQL para desarrolladores","Coursera",18,"Intermedio")],"Docker":[C("Docker Fundamentals","Docker Training",12,"Básico")],
+ "Kubernetes":[C("CKAD — Certified Kubernetes Application Developer","Linux Foundation",28,"Avanzado","Certificación")],"Redis":[C("Redis for Developers","Redis University",8,"Básico")],
+ "Python":[C("Python para ingeniería de datos","DataCamp",24,"Intermedio")],"Apache Spark":[C("Apache Spark Developer Associate","Databricks Academy",22,"Intermedio","Certificación")],
+ "Kafka":[C("Apache Kafka Fundamentals","Confluent",15,"Básico")],"AWS S3":[C("AWS S3 & Storage Services","AWS Skill Builder",10,"Básico")],
+ "Airflow":[C("Astronomer Certification for Apache Airflow","Astronomer",20,"Intermedio","Certificación")],"TensorFlow":[C("TensorFlow Developer","Coursera · DeepLearning.AI",40,"Intermedio","Certificación")],
+ "MLflow":[C("MLOps con MLflow","Databricks Academy",10,"Intermedio")],"SQL":[C("SQL avanzado para analítica","Platzi",14,"Intermedio")],
+ "REST APIs":[C("Diseño de APIs REST","Postman Academy",10,"Básico")],"OAuth 2.0":[C("OAuth 2.0 y OpenID Connect","Okta Developer",8,"Intermedio")],
+ "Kong / API Gateway":[C("Kong Gateway Associate","Kong Academy",16,"Intermedio","Certificación")],"Microservicios":[C("Arquitectura de microservicios","edX",30,"Avanzado")],
+ "OpenAPI":[C("OpenAPI Specification en la práctica","SmartBear Academy",6,"Básico")],"SIEM (Splunk)":[C("Splunk Core Certified User","Splunk Education",18,"Básico","Certificación")],
+ "Respuesta a incidentes":[C("GIAC Certified Incident Handler (GCIH)","SANS",40,"Avanzado","Certificación")],"Redes TCP/IP":[C("CCNA — Cisco Certified Network Associate","Cisco NetAcad",70,"Intermedio","Certificación")],
+ "Linux":[C("Linux Foundation Certified SysAdmin (LFCS)","Linux Foundation",32,"Intermedio","Certificación")],"Terraform":[C("HashiCorp Certified: Terraform Associate","HashiCorp",20,"Intermedio","Certificación")],
+ "AWS":[C("AWS Certified Solutions Architect – Associate","AWS Skill Builder",45,"Intermedio","Certificación")],"CI/CD":[C("CI/CD con GitHub Actions","GitHub Skills",10,"Básico")],
+ "LLMs / Prompting":[C("Prompt engineering y uso de la API de Claude","Anthropic Academy",8,"Básico")],"RAG":[C("Retrieval-Augmented Generation en producción","DeepLearning.AI",10,"Intermedio")],
+ "FastAPI":[C("APIs con FastAPI","TestDriven.io",14,"Intermedio")],"Pinecone / Vector DB":[C("Vector Databases for AI","Pinecone Learn",6,"Básico")],
+ "Scrum":[C("Professional Scrum Master I (PSM I)","Scrum.org",16,"Intermedio","Certificación")],"Jira":[C("Jira para equipos ágiles","Atlassian University",6,"Básico")],
+ "Análisis de datos":[C("Google Data Analytics","Coursera · Google",60,"Básico","Certificación")],
+ "Pensamiento crítico":[C("Pensamiento crítico para la toma de decisiones","isEazy Skills",3,"Power skill")],"Empatía":[C("Empatía y escucha activa en equipos","isEazy Skills",2,"Power skill")],
+ "Comunicación asertiva":[C("Comunicación asertiva en entornos técnicos","LinkedIn Learning",4,"Power skill")],"Inteligencia emocional":[C("Inteligencia emocional en el trabajo","isEazy Skills",3,"Power skill")],
+ "Adaptabilidad":[C("Adaptabilidad y gestión del cambio","Coursera",6,"Power skill")],"Liderazgo":[C("Liderazgo de equipos ágiles","Coursera · U. de Illinois",12,"Power skill")],
+ "Trabajo en equipo":[C("Colaboración efectiva en equipos remotos","LinkedIn Learning",3,"Power skill")],"Resolución de problemas":[C("Resolución creativa de problemas","isEazy Skills",3,"Power skill")],
+ "Gestión del tiempo":[C("Productividad y gestión del tiempo","isEazy Skills",2,"Power skill")],"Creatividad":[C("Design Thinking aplicado","IDEO U",8,"Power skill")],
+ "Resiliencia":[C("Resiliencia profesional","isEazy Skills",2,"Power skill")]
+};
+
+/* ================= MOTOR DE MATCHING (espejo de match_engine.py) ================= */
+function match(emp,role){
+  const tech=role.tech.map(req=>{
+    const h=emp.tech.find(s=>norm(s.n)===norm(req.n));
+    if(!h)return{...req,has:null,credit:0,status:"miss"};
+    const lc=Math.min(1,h.l/req.l),yc=Math.min(1,h.y/Math.max(req.y,.1));
+    return{...req,has:h,credit:.6*lc+.4*yc,status:(h.l>=req.l&&h.y>=req.y)?"ok":"part"};
+  });
+  const power=role.power.map(req=>{
+    const h=emp.power.find(s=>norm(s.n)===norm(req.n));
+    if(!h)return{...req,has:null,credit:0,status:"miss"};
+    return{...req,has:h,credit:Math.min(1,h.l/req.l),status:h.l>=req.l?"ok":"part"};
+  });
+  const avg=a=>a.length?a.reduce((s,x)=>s+x.credit,0)/a.length:1;
+  const t=avg(tech),p=avg(power);
+  return{score:Math.round(100*(.7*t+.3*p)),tech,power,t:Math.round(t*100),p:Math.round(p*100)};
+}
+function level(s){return s>=80?{k:"ready",l:"Listo para el rol",c:"var(--ok)",b:"b-ready"}:s>=60?{k:"pot",l:"Con potencial",c:"var(--warn)",b:"b-pot"}:s>=40?{k:"train",l:"Requiere capacitación",c:"var(--portal)",b:"b-train"}:{k:"gap",l:"Brecha alta",c:"var(--bad)",b:"b-gap"}}
+function ranking(emp){return ROLES.map(r=>({role:r,m:match(emp,r)})).sort((a,b)=>b.m.score-a.m.score)}
+function cellColor(s){const lv=level(s);return{ready:"rgba(0,229,160,",pot:"rgba(246,176,60,",train:"rgba(255,154,60,",gap:"rgba(255,95,109,"}[lv.k]}
+
+/* ================= UTILIDADES ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const initials=n=>n.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();
+const ring=(v,cls="")=>{const lv=level(v);return`<div class="ring ${cls}" style="--v:${v};--c:${lv.c}"><span>${v}%</span></div>`};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function toast(msg){document.querySelectorAll('.toast').forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+async function typeInto(el,text,speed=28){el.textContent="";for(const ch of text){el.textContent+=ch;blip();await sleep(reduce?0:speed)}}
+
+/* ================= AUDIO ================= */
+let actx=null,audioEl=null,gainNode=null,srcNode=null,songBuf=null,songName="",soundOn=false;
+function ctx(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();gainNode=actx.createGain();gainNode.gain.value=.6;gainNode.connect(actx.destination)}catch(e){}}return actx}
+function blip(){}
+function setLive(on,label){soundOn=on;$("#musicBtn").classList.toggle("live",on);$("#musicBtn").setAttribute("aria-pressed",on);$("#musicLbl").textContent=label||(on?"Sonando":"Música")}
+function stopAll(){if(audioEl)audioEl.pause();if(srcNode){try{srcNode.stop()}catch(e){}srcNode=null}setLive(false)}
+/* guarda la canción solo en este navegador para que suene sola la próxima vez */
+function idb(){return new Promise((ok,ko)=>{try{const r=indexedDB.open("talentmatch",1);r.onupgradeneeded=()=>r.result.createObjectStore("song");r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)}catch(e){ko(e)}})}
+async function saveSong(name,ab){try{const db=await idb();db.transaction("song","readwrite").objectStore("song").put({name,ab:ab.slice(0)},"portals")}catch(e){}}
+async function loadSong(){try{const db=await idb();return await new Promise(ok=>{const q=db.transaction("song").objectStore("song").get("portals");q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch(e){return null}}
+async function decodeSong(name,ab){const a=ctx();if(!a)throw new Error("sin audio");songBuf=await new Promise((ok,ko)=>a.decodeAudioData(ab.slice(0),ok,ko));songName=name}
+function playBuf(){const a=ctx();if(!a||!songBuf)return false;a.resume();stopAll();srcNode=a.createBufferSource();srcNode.buffer=songBuf;srcNode.loop=true;srcNode.connect(gainNode);srcNode.start();setLive(true,"Portals");$("#trackInfo").textContent="▶ "+songName+" · en bucle";return true}
+async function useFile(f){
+  try{const ab=await f.arrayBuffer();ctx()&&actx.resume();await decodeSong(f.name,ab);saveSong(f.name,ab);return true}
+  catch(e){$("#trackInfo").textContent="No se pudo leer ese archivo. Prueba con un MP3.";toast("No se pudo leer ese archivo de audio.");return false}
+}
+function openMusic(o){$("#musicScrim").hidden=!o;$("#musicDrawer").hidden=!o}
+$("#musicBtn").onclick=()=>{if(soundOn){stopAll();return}if(songBuf){playBuf();return}if(audioEl){audioEl.play().then(()=>setLive(true,"Portals")).catch(()=>openMusic(true));return}openMusic(true)};
+$("#musicScrim").onclick=()=>openMusic(false);
+document.querySelector('[data-close="music"]').onclick=()=>openMusic(false);
+$("#audioFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;if(await useFile(f)){playBuf();openMusic(false)}};
+$("#stopBtn").onclick=()=>{stopAll();$("#trackInfo").textContent="Silenciado."};
+document.addEventListener("input",e=>{if(e.target.matches("input,textarea")){e.target.classList.add("typing");blip();clearTimeout(e.target._t);e.target._t=setTimeout(()=>e.target.classList.remove("typing"),260)}});
+
+/* ================= PORTAL CANVAS ================= */
+(function portal(){
+  const cv=$("#portal"),g=cv.getContext("2d");let W,H,parts=[];
+  const fit=()=>{const r=cv.getBoundingClientRect();W=cv.width=r.width*devicePixelRatio;H=cv.height=r.height*devicePixelRatio};
+  fit();addEventListener("resize",fit);
+  for(let i=0;i<260;i++)parts.push({a:Math.random()*6.283,r:.8+Math.random()*.35,s:.004+Math.random()*.012,life:Math.random()});
+  const stars=Array.from({length:120},()=>({x:Math.random(),y:Math.random(),z:Math.random()}));
+  function frame(){
+    g.clearRect(0,0,W,H);
+    stars.forEach(s=>{g.fillStyle=`rgba(180,200,255,${.15+s.z*.4})`;g.fillRect(s.x*W,s.y*H,1.2*devicePixelRatio,1.2*devicePixelRatio)});
+    const cx=W*(W>900*devicePixelRatio?.78:.5),cy=H*.45,R=Math.min(W,H)*.34;
+    const grd=g.createRadialGradient(cx,cy,R*.6,cx,cy,R*1.25);grd.addColorStop(0,"rgba(255,154,60,0)");grd.addColorStop(.7,"rgba(255,154,60,.08)");grd.addColorStop(1,"rgba(255,154,60,0)");
+    g.fillStyle=grd;g.beginPath();g.arc(cx,cy,R*1.3,0,7);g.fill();
+    parts.forEach(p=>{p.a+=p.s;p.life+=.01;if(p.life>1){p.life=0;p.r=.8+Math.random()*.35}
+      const rr=R*p.r,x=cx+Math.cos(p.a)*rr,y=cy+Math.sin(p.a)*rr*.98;
+      const tx=-Math.sin(p.a)*10*devicePixelRatio,ty=Math.cos(p.a)*10*devicePixelRatio;
+      g.strokeStyle=`rgba(255,${150+Math.random()*80|0},60,${(1-p.life)*.8})`;g.lineWidth=1.3*devicePixelRatio;
+      g.beginPath();g.moveTo(x,y);g.lineTo(x-tx,y-ty);g.stroke()});
+    if(!reduce)requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ================= NAVEGACIÓN ================= */
+const VIEWS=[["bank","Banco de CV"],["analyze","Analizar CV"],["projects","Proyectos"],["matrix","Matriz de potencial"],["arch","Arquitectura"],["refs","Referencias"]];
+let logged=false,current="cover";
+function renderNav(){$("#nav").innerHTML=logged?VIEWS.map(([k,l])=>`<button data-v="${k}" class="${current===k?"on":""}">${l}</button>`).join(""):`<button data-v="cover" class="${current==="cover"?"on":""}">Portada</button><button data-v="refs" class="${current==="refs"?"on":""}">Referencias</button><button data-v="login" class="${current==="login"?"on":""}">Ingresar</button>`}
+$("#nav").onclick=e=>{const b=e.target.closest("button");if(b)go(b.dataset.v)};
+function go(v){
+  if(["bank","analyze","projects","matrix","arch"].includes(v)&&!logged)v="login";
+  current=v;document.querySelectorAll(".view").forEach(s=>s.hidden=s.id!=="v-"+v);
+  const s=$("#v-"+v);s.classList.remove("fade-in");void s.offsetWidth;s.classList.add("fade-in");
+  renderNav();scrollTo({top:0,behavior:reduce?"auto":"smooth"});
+  ({bank:renderBank,projects:renderProjects,matrix:renderMatrix,analyze:()=>{if(!A.step)setStep(1)}})[v]?.();
+}
+$("#goHome").onclick=()=>go("cover");$("#toLogin").onclick=()=>go(logged?"bank":"login");
+$("#toCharts").onclick=()=>$("#chartsAnchor").scrollIntoView({behavior:"smooth"});
+$("#toAnalyze2").onclick=()=>{A.step=0;go("analyze")};
+
+/* ================= PORTADA ================= */
+$("#teamList").innerHTML=TEAM.map(n=>{const p=n.split(" ");return`<li><div class="av">${p[0][0]}${p[p.length-2][0]}</div><span>${n}</span></li>`}).join("");
+(async()=>{const lines=["> Inicializando motor TalentMatch v3.0…","> Conectando con Claude Opus 5.5 API…","> Cargando 12 hojas de vida y 6 proyectos TI…","> Calculando compatibilidad empleado × puesto…","> Listo. El talento correcto, en el proyecto correcto."];const el=$("#typer");let i=0;while(true){await typeInto(el,lines[i%lines.length],32);await sleep(1600);i++}})();
+
+let charts={};
+function buildCharts(){
+  Chart.defaults.color="#8a97b4";Chart.defaults.font.family='"DM Sans", system-ui, sans-serif';Chart.defaults.borderColor="#1f2a44";
+  const best=EMP.map(e=>ranking(e)[0]);
+  const ready=best.filter(b=>b.m.score>=80).length;
+  const vac=ROLES.reduce((s,r)=>s+r.vac,0);
+  const avg=Math.round(best.reduce((s,b)=>s+b.m.score,0)/best.length);
+  $("#kpis").innerHTML=[[EMP.length,"Hojas de vida en el banco"],[ROLES.length+" roles",vac+" vacantes en 6 proyectos"],[avg+"%","Mejor encaje promedio"],[ready,"Empleados listos para un rol (≥ 80%)"]].map(([n,l])=>`<div class="panel kpi"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+  // por proyecto
+  const projBest=PROJ.map(p=>{let top=[];p.roles.forEach(r=>EMP.forEach(e=>top.push({e,r,s:match(e,r).score})));top.sort((a,b)=>b.s-a.s);return{p,top}});
+  charts.proj=new Chart($("#chProj"),{type:"bar",data:{labels:PROJ.map(p=>p.name),datasets:[{data:projBest.map(x=>x.top[0].s),backgroundColor:projBest.map(x=>cellColor(x.top[0].s)+".75)"),borderRadius:6}]},
+    options:{indexAxis:"y",maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw}% · ${projBest[c.dataIndex].top[0].e.name} (${projBest[c.dataIndex].top[0].r.name})`}}},scales:{x:{min:0,max:100,ticks:{callback:v=>v+"%"}},y:{grid:{display:false}}},
+    onClick:(ev,els)=>{if(!els.length)return;const x=projBest[els[0].index];const seen=new Set();const t=x.top.filter(o=>!seen.has(o.e.id)&&seen.add(o.e.id)).slice(0,3);$("#noteProj").innerHTML=`<b style="color:var(--fg)">${esc(x.p.name)}:</b> `+t.map(o=>`${esc(o.e.name)} <span class="mono" style="color:${level(o.s).c}">${o.s}%</span> <span style="color:var(--dim)">(${esc(o.r.name)})</span>`).join(" · ")}}});
+  // power radar
+  const powAvg=POWER.map(ps=>{const v=EMP.map(e=>e.power.find(x=>x.n===ps)?.l||0);return Math.round(v.reduce((a,b)=>a+b,0)/EMP.length)});
+  const powDem=POWER.map(ps=>{const v=ROLES.map(r=>r.power.find(x=>x.n===ps)?.l).filter(Boolean);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0});
+  charts.power=new Chart($("#chPower"),{type:"radar",data:{labels:POWER,datasets:[{label:"Banco de CV (promedio)",data:powAvg,borderColor:"#3fc8ff",backgroundColor:"rgba(63,200,255,.15)",pointBackgroundColor:"#3fc8ff"},{label:"Exigencia de los roles",data:powDem,borderColor:"#ff9a3c",backgroundColor:"rgba(255,154,60,.08)",pointBackgroundColor:"#ff9a3c",borderDash:[4,4]}]},
+    options:{maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{display:false,stepSize:25},grid:{color:"#1f2a44"},angleLines:{color:"#1f2a44"},pointLabels:{font:{size:10.5},color:"#8a97b4"}}},plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:11}}}}}});
+  // oferta/demanda
+  const dem={};ROLES.forEach(r=>r.tech.forEach(t=>{dem[t.n]=(dem[t.n]||0)+1}));
+  const keys=Object.keys(dem).sort((a,b)=>dem[b]-dem[a]).slice(0,10);
+  const sup=keys.map(k=>EMP.filter(e=>{const h=e.tech.find(x=>x.n===k);const req=Math.min(...ROLES.flatMap(r=>r.tech.filter(t=>t.n===k).map(t=>t.l)));return h&&h.l>=req}).length);
+  charts.sup=new Chart($("#chSupply"),{type:"bar",data:{labels:keys,datasets:[{label:"Demanda (roles)",data:keys.map(k=>dem[k]),backgroundColor:"rgba(255,154,60,.7)",borderRadius:5},{label:"Oferta (empleados)",data:sup,backgroundColor:"rgba(0,229,160,.7)",borderRadius:5}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:11}}}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:50,minRotation:30}},y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+  // potencial
+  const groups=["ready","pot","train","gap"],gl=["Listo","Con potencial","Requiere capacitación","Brecha alta"];
+  const counts=groups.map(k=>best.filter(b=>level(b.m.score).k===k).length);
+  charts.pot=new Chart($("#chPot"),{type:"doughnut",data:{labels:gl,datasets:[{data:counts,backgroundColor:["#00e5a0","#f6b03c","#ff9a3c","#ff5f6d"],borderColor:"#111a2e",borderWidth:3}]},
+    options:{maintainAspectRatio:false,cutout:"62%",plugins:{legend:{position:"right",labels:{boxWidth:10,font:{size:11}}}},
+    onClick:(ev,els)=>{if(!els.length)return;const k=groups[els[0].index];const names=best.map((b,i)=>({b,e:EMP[i]})).filter(x=>level(x.b.m.score).k===k);$("#notePot").innerHTML=names.length?`<b style="color:var(--fg)">${gl[els[0].index]}:</b> `+names.map(x=>`${esc(x.e.name)} → ${esc(x.b.role.name)} <span class="mono">${x.b.m.score}%</span>`).join(" · "):"Nadie en este nivel."}}});
+}
+function refreshCharts(){Object.values(charts).forEach(c=>c.destroy());charts={};if(window.Chart)buildCharts()}
+
+/* ================= LOGIN ================= */
+$("#autofill").onclick=async()=>{await typeInto($("#lgUser"),ADMIN.email,40);let p="";for(const ch of ADMIN.pass){p+=ch;$("#lgPass").value=p;blip();$("#lgPass").classList.add("typing");await sleep(reduce?0:55)}$("#lgPass").classList.remove("typing")};
+// typeInto escribe textContent; para inputs usamos value:
+typeInto=async function(el,text,speed=28){const isIn=el.tagName==="INPUT";if(isIn)el.value="";else el.textContent="";let acc="";for(const ch of text){acc+=ch;if(isIn){el.value=acc;el.classList.add("typing")}else el.textContent=acc;blip();await sleep(reduce?0:speed)}if(isIn)el.classList.remove("typing")};
+$("#loginForm").onsubmit=async e=>{e.preventDefault();const u=$("#lgUser").value.trim().toLowerCase(),p=$("#lgPass").value;
+  if(u!==ADMIN.email||p!==ADMIN.pass){$("#lgErr").textContent="Correo o contraseña incorrectos. Usa las credenciales demo que aparecen abajo.";return}
+  $("#lgErr").textContent="";logged=true;
+  $("#adminChip").hidden=false;$("#adminChip").innerHTML=`<div class="av" style="width:28px;height:28px;font-size:11px">${initials(ADMIN.name)}</div><span>${ADMIN.name}<br><small style="color:var(--dim)">${ADMIN.role}</small></span><button class="icon-btn" id="logout">Salir</button>`;
+  $("#logout").onclick=()=>{logged=false;$("#adminChip").hidden=true;go("cover")};
+  toast(`Bienvenida, ${ADMIN.name}. Sesión iniciada.`);go("bank")};
+
+/* ================= BANCO ================= */
+function renderBank(){
+  const q=norm($("#q").value),f=$("#fPot").value;
+  const list=EMP.map(e=>({e,best:ranking(e)[0]})).filter(({e,best})=>{
+    const hay=norm([e.name,e.role,e.area,...e.tech.map(t=>t.n),...e.power.map(t=>t.n)].join(" "));
+    return(!q||hay.includes(q))&&(!f||level(best.m.score).k===f)});
+  $("#cards").innerHTML=list.length?list.map(({e,best})=>`<button class="panel ecard" data-id="${e.id}">
+    <div class="top"><div class="av">${initials(e.name)}</div><div style="min-width:0"><div class="nm">${esc(e.name)}</div><div class="rl">${esc(e.role)}</div><div class="muted mono" style="font-size:11px">${e.id} · ${e.yrs} años</div></div></div>
+    <div class="chips">${e.tech.slice(0,4).map(t=>`<span class="chip t">${esc(t.n)}</span>`).join("")}${e.tech.length>4?`<span class="chip">+${e.tech.length-4}</span>`:""}</div>
+    <div class="chips">${e.power.slice(0,3).map(t=>`<span class="chip p">${esc(t.n)}</span>`).join("")}</div>
+    <div class="best"><span>Mejor puesto<br><b style="color:var(--fg)">${esc(best.role.name)}</b> · ${esc(best.role.project.name)}</span>${ring(best.m.score)}</div></button>`).join(""):`<p class="muted">Ningún empleado coincide con ese filtro.</p>`;
+}
+$("#q").oninput=renderBank;$("#fPot").onchange=renderBank;
+$("#cards").onclick=e=>{const c=e.target.closest(".ecard");if(c)openEmp(c.dataset.id)};
+
+let radarChart=null;
+function openEmp(id){
+  const e=EMP.find(x=>x.id===id),rk=ranking(e);
+  const d=$("#drawer");$("#scrim").hidden=false;d.hidden=false;
+  d.innerHTML=`<button class="icon-btn x" id="dx">Cerrar ✕</button>
+  <div style="display:flex;gap:14px;align-items:center"><div class="av" style="width:58px;height:58px;font-size:19px">${initials(e.name)}</div><div><p class="eyebrow">${e.id} · ${esc(e.area)}</p><h3 style="margin-top:4px">${esc(e.name)}</h3><p class="muted" style="font-size:13.5px">${esc(e.role)} · ${e.yrs} años · ${esc(e.city)}</p><p class="muted mono" style="font-size:11.5px">${esc(e.email)} · ${esc(e.phone)}</p></div></div>
+  <p class="muted" style="font-size:13px;margin-top:12px">${esc(e.edu)}</p>
+  <div class="two" style="margin-top:18px">
+    <div class="panel"><div class="plabel">Skills técnicas <b>${e.tech.length}</b></div><div class="chips">${e.tech.map(t=>`<span class="chip t">${esc(t.n)} <small>${t.l}% · ${t.y}a</small></span>`).join("")}</div></div>
+    <div class="panel"><div class="plabel">Power skills</div><div style="position:relative;height:210px"><canvas id="empRadar"></canvas></div></div>
+  </div>
+  <div class="panel" style="margin-top:16px"><div class="plabel">Experiencia laboral <b>${e.yrs} años</b></div>${expHTML(e,false)}</div>
+  <div class="plabel" style="margin-top:22px">Potencial en los puestos de la empresa <b>${rk.length} roles</b></div>
+  <div class="pot-list">${rk.map((x,i)=>{const lv=level(x.m.score);return`<div class="pot" data-r="${x.role.id}" role="button" tabindex="0"><div><div class="rn">${i+1}. ${esc(x.role.name)} <span class="badge ${lv.b}">${lv.l}</span></div><div class="pj">${esc(x.role.project.name)} · técnico ${x.m.t}% · power ${x.m.p}%</div></div><div class="sc" style="color:${lv.c}">${x.m.score}%</div><div class="bar2"><i style="width:0;background:${lv.c}" data-w="${x.m.score}"></i></div></div>`}).join("")}</div>`;
+  requestAnimationFrame(()=>d.querySelectorAll(".bar2 i").forEach(i=>i.style.width=i.dataset.w+"%"));
+  $("#dx").onclick=closeDrawer;
+  d.querySelectorAll(".pot").forEach(p=>{const fn=()=>{closeDrawer();openResult(e,ROLES.find(r=>r.id===p.dataset.r))};p.onclick=fn;p.onkeydown=k=>{if(k.key==="Enter")fn()}});
+  if(radarChart)radarChart.destroy();
+  radarChart=new Chart($("#empRadar"),{type:"radar",data:{labels:e.power.map(p=>p.n),datasets:[{data:e.power.map(p=>p.l),borderColor:"#3fc8ff",backgroundColor:"rgba(63,200,255,.18)",pointBackgroundColor:"#3fc8ff"}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:"#1f2a44"},angleLines:{color:"#1f2a44"},pointLabels:{font:{size:10}}}}}});
+}
+function closeDrawer(){$("#scrim").hidden=true;$("#drawer").hidden=true}
+$("#scrim").onclick=closeDrawer;
+addEventListener("keydown",e=>{if(e.key==="Escape"){closeDrawer();openMusic(false)}});
+function openResult(emp,role){A.cand=emp;A.role=role;A.fromBank=true;go("analyze");setStep(4);showResult()}
+
+/* ================= ANALIZAR (flujo 5 pasos) ================= */
+const A={step:0,file:null,cand:null,role:null,editing:false,fromBank:false};
+const STEPS=["Cargar CV","Perfil JSON","Proyectos","Resultados","Plan"];
+function setStep(n){A.step=n;$("#steps").innerHTML=STEPS.map((s,i)=>`<span class="${i+1===n?"on":i+1<n?"done":""}"><i>${i+1<n?"✓":i+1}</i>${s}</span>`).join("");
+  if(n===1)stageUpload();if(n===2)stageProfile();if(n===3)stageRoles();if(n===5)stagePlan()}
+
+function stageUpload(){
+  A.file=null;A.fromBank=false;
+  $("#stage").innerHTML=`<div style="max-width:620px"><p class="eyebrow">Paso 01 / 05</p><h2 style="margin-top:8px">Carga la hoja de vida</h2>
+  <p class="muted" style="margin-top:10px">Sube el CV en PDF. Claude Opus 5.5 extraerá las habilidades técnicas, las power skills y la experiencia, y las convertirá en un JSON con formato ATS.</p>
+  <label class="drop" id="drop" style="margin-top:22px" for="pdf"><span class="big">⬆</span><b>Arrastra el PDF aquí</b><span class="muted" style="font-size:13px">o haz clic para seleccionarlo</span><span class="mono" style="font-size:11px;color:var(--dim)">Solo PDF · máx. 10 MB</span></label>
+  <input type="file" id="pdf" accept="application/pdf" class="sr">
+  <div class="cta-row" style="margin-top:16px"><button class="btn pri" id="go" disabled>Analizar con IA →</button><button class="btn ghost" id="sample">Usar CV de ejemplo</button></div>
+  <div class="feat"><div class="panel"><b>Uso interno</b>Solo visible para RR. HH. y PMO</div><div class="panel"><b>Instantáneo</b>Análisis en segundos</div><div class="panel"><b>Preciso</b>Motor Claude Opus 5.5 API</div></div></div>`;
+  const drop=$("#drop"),inp=$("#pdf");
+  const accept=f=>{if(!f)return;if(!/pdf$/i.test(f.type)&&!/\.pdf$/i.test(f.name)){toast("Solo se aceptan archivos PDF.");return}if(f.size>10*1024*1024){toast("El archivo supera 10 MB.");return}A.file={name:f.name,size:f.size};drop.classList.add("ready");drop.innerHTML=`<span class="big">📄</span><b style="color:var(--mint)">${esc(f.name)}</b><span class="muted" style="font-size:13px">${(f.size/1024).toFixed(0)} KB · listo para procesar</span>`;$("#go").disabled=false};
+  inp.onchange=()=>accept(inp.files[0]);
+  ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over")}));
+  ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over")}));
+  drop.addEventListener("drop",e=>accept(e.dataTransfer.files[0]));
+  $("#sample").onclick=()=>{A.file={name:"hoja_de_vida_k.salazar.pdf",size:184320,sample:true};drop.classList.add("ready");drop.innerHTML=`<span class="big">📄</span><b style="color:var(--mint)">hoja_de_vida_k.salazar.pdf</b><span class="muted" style="font-size:13px">180 KB · listo para procesar</span>`;$("#go").disabled=false};
+  $("#go").onclick=processCV;
+}
+
+function seedRand(str){let h=2166136261;for(const c of str){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return()=>{h^=h<<13;h^=h>>>17;h^=h<<5;return((h>>>0)%10000)/10000}}
+function synthCandidate(fname){
+  const r=seedRand(fname);
+  const FIRST=["Kevin","Mariana","Sebastián","Paula","Nicolás","Isabella","Tomás","Gabriela","Esteban","Lucía"],LAST=["Salazar","Gómez","Duarte","Cárdenas","Pineda","Arango","Becerra","Lozano","Suárez","Montoya"];
+  const base=fname.replace(/\.pdf$/i,"").replace(/hoja[_ -]?de[_ -]?vida[_ -]?|cv[_ -]?/i,"").replace(/[._-]+/g," ").trim();
+  let name=base&&/[a-z]/i.test(base)?base.split(/\s+/).filter(Boolean).map(w=>w[0].toUpperCase()+w.slice(1)).join(" "):FIRST[r()*10|0]+" "+LAST[r()*10|0];
+  if(name.length<5)name=FIRST[r()*10|0]+" "+name;
+  if(/^k salazar$/i.test(name))name="Kevin Salazar";
+  const archetypes=[
+    {role:"Desarrollador Backend",pool:["Node.js","PostgreSQL","Docker","Redis","REST APIs","Git","Kubernetes","Python"]},
+    {role:"Analista de Datos",pool:["Python","SQL","Apache Spark","Airflow","AWS S3","Análisis de datos","PostgreSQL","Kafka"]},
+    {role:"Desarrollador Frontend",pool:["React","TypeScript","Next.js","Testing (Jest)","GraphQL","Git","Figma"]},
+    {role:"Ingeniero de Ciberseguridad",pool:["SIEM (Splunk)","Linux","Redes TCP/IP","Python","Respuesta a incidentes","AWS"]},
+    {role:"Ingeniero de IA",pool:["Python","LLMs / Prompting","RAG","FastAPI","Docker","Pinecone / Vector DB","TensorFlow"]}];
+  const ar=archetypes[r()*archetypes.length|0];
+  const tech=ar.pool.filter(()=>r()>.22).map(n=>({n,l:45+Math.round(r()*45),y:Math.round((.5+r()*4.5)*2)/2}));
+  const power=[...POWER].sort(()=>r()-.5).slice(0,5).map(n=>({n,l:55+Math.round(r()*40)}));
+  const yrs=Math.max(1,Math.round(tech.reduce((m,t)=>Math.max(m,t.y),0)+r()*2));
+  return{id:"EMP-"+(24000+(r()*900|0)),name,role:ar.role,area:"Postulación interna",yrs,city:["Bogotá","Medellín","Cali","Tunja"][r()*4|0],edu:"Ing. de Sistemas — Universidad Católica de Colombia, "+(2016+(r()*9|0)),tech,power,
+    email:"",phone:"",exp:[]};
+}
+function finishCandidate(c){const half=Math.ceil(c.tech.length/2),cur=Math.max(1,Math.round(c.yrs*.5));
+  const f=norm(c.name.split(" ")[0])[0],l=norm(c.name.split(" ").slice(-1)[0]);c.email=`${f}.${l}@novabanca.co`;c.phone="+57 310 555 "+(1000+(c.name.length*97)%9000);
+  c.exp=[{cargo:c.role,empresa:"NovaBanca — Transformación Digital",desde:NOW-cur,hasta:"Hoy",tech:c.tech.slice(0,half).map(t=>t.n)}];
+  if(c.yrs-cur>=1)c.exp.push({cargo:"Analista de Sistemas",empresa:"NovaBanca — Banca Digital",desde:NOW-c.yrs,hasta:NOW-cur,tech:c.tech.slice(half).map(t=>t.n)});
+  c.tech.forEach(t=>t.base=t.y);syncYears(c);return c}
+
+async function processCV(){
+  $("#stage").innerHTML=`<div style="max-width:680px;margin:0 auto"><div style="text-align:center;margin-bottom:18px"><p class="eyebrow">Procesando</p><h2 style="margin-top:8px">Analizando el perfil</h2><p class="muted" style="margin-top:6px">Claude Opus 5.5 API está leyendo ${esc(A.file.name)}</p></div>
+  <div class="term" id="term" aria-live="polite"></div><div class="progress"><i id="pg"></i></div><p class="mono" id="pct" style="text-align:center;font-size:12px;color:var(--mint);margin-top:8px">0%</p></div>`;
+  const lines=[["dm","$ talentmatch parse --file "+A.file.name],["ok","✓ Leyendo documento PDF ("+(A.file.size/1024).toFixed(0)+" KB)…"],["ok","✓ Extrayendo texto y estructura (OCR de respaldo)…"],["ai","→ POST https://api.anthropic.com/v1/messages  model=claude-opus-5-5"],["ai","  Identificando habilidades técnicas, niveles y años…"],["ai","  Identificando power skills (pensamiento crítico, empatía, comunicación…)"],["ok","✓ Normalizando skills contra la taxonomía ATS interna…"],["ok","✓ Estructurando JSON ATS del perfil (schema ats.cv.v1)…"],["py","$ python match_engine.py --cv perfil.json --ofertas roles.json"],["py","  Calculando 9 compatibilidades (70% técnico · 30% power)…"],["ok","✓ ¡Análisis completado!"]];
+  const term=$("#term");
+  for(let i=0;i<lines.length;i++){const div=document.createElement("div");div.className=lines[i][0];term.appendChild(div);await typeInto(div,lines[i][1],10);term.scrollTop=term.scrollHeight;const p=Math.round((i+1)/lines.length*100);$("#pg").style.width=p+"%";$("#pct").textContent=p+"%";await sleep(reduce?0:180)}
+  A.cand=finishCandidate(synthCandidate(A.file.name));await sleep(500);setStep(2);
+}
+
+function atsJSON(c){return{schema:"ats.cv.v1",fuente:{archivo:A.file?.name||"banco_cv",modelo:"claude-opus-5-5",extraido:new Date().toISOString().slice(0,10)},
+  candidato:{id:c.id,nombre:c.name,cargo_actual:c.role,area:c.area,email:c.email,telefono:c.phone,ubicacion:c.city,anios_experiencia:c.yrs},
+  habilidades_tecnicas:c.tech.map(t=>({nombre:t.n,nivel:t.l,anios:t.y})),power_skills:c.power.map(p=>({nombre:p.n,nivel:p.l})),
+  experiencia:(c.exp||[]).map(x=>({cargo:x.cargo,empresa:x.empresa,desde:x.desde,hasta:x.hasta,anios:expDur(x),tecnologias:x.tech})),educacion:c.edu.split(" · ")}}
+function hlJSON(o){return esc(JSON.stringify(o,null,2)).replace(/(&quot;[^&]*?&quot;)(\s*:)/g,'<span class="k">$1</span>$2').replace(/:\s(&quot;.*?&quot;)/g,': <span class="s">$1</span>').replace(/:\s(\d+\.?\d*)/g,': <span class="n">$1</span>')}
+function mdCV(c){return`# ${c.name}\n**${c.role}** · ${c.area} · ${c.city}\n\n## Habilidades técnicas\n${c.tech.map(t=>`- ${t.n} — nivel ${t.l}% · ${t.y} años`).join("\n")}\n\n## Power skills\n${c.power.map(p=>`- ${p.n} — ${p.l}%`).join("\n")}\n\n## Experiencia\n${(c.exp||[]).map(x=>`- **${x.cargo}** · ${x.empresa} · ${x.desde}–${x.hasta} (${expDur(x)} años) — ${x.tech.join(", ")}`).join("\n")}\n\n## Educación\n${c.edu.split(" · ").map(e=>"- "+e).join("\n")}`}
+
+function expHTML(c,ed){
+  if(!c.exp.length)return`<p class="muted" style="font-size:13px">Sin experiencia registrada.${ed?" Agrégala abajo.":""}</p>`;
+  return`<div class="tl">${[...c.exp].sort((a,b)=>(b.hasta==="Hoy"?NOW:+b.hasta)-(a.hasta==="Hoy"?NOW:+a.hasta)).map(x=>{const i=c.exp.indexOf(x);const d=expDur(x);return`<div class="it"><b>${esc(x.cargo)}</b><span class="co">${esc(x.empresa)}</span><span class="yr">${x.desde} – ${x.hasta} · ${d} año${d===1?"":"s"}</span>${x.tech.length?`<div class="chips" style="margin-top:4px">${x.tech.map(t=>`<span class="chip t" style="font-size:11.5px;padding:2px 8px">${esc(t)}</span>`).join("")}</div>`:""}${ed?`<button class="del" data-dx="${i}">Quitar experiencia</button>`:""}</div>`}).join("")}</div>`;
+}
+function stageProfile(){
+  const c=A.cand,ed=A.editing;
+  $("#stage").innerHTML=`<div class="section-head" style="margin-bottom:16px"><div><p class="eyebrow">Paso 02 / 05</p><h2 style="margin-top:8px">Tu perfil extraído</h2><p class="muted" style="margin-top:6px">${ed?"Modo edición: modifica cualquier dato y guarda los cambios.":"Revisa que la información sea correcta. Puedes editarla si algo está mal."}</p></div>
+    <div class="cta-row" style="margin:0">${ed?`<button class="btn ghost" id="cancel">Cancelar</button><button class="btn pri" id="save">Guardar cambios</button>`:`<button class="btn ghost" id="edit">✏️ Editar perfil</button><button class="btn pri" id="next">Ver proyectos TI →</button>`}</div></div>
+    ${ed?`<div class="warnbox">⚠ Estás en modo edición. Los cambios reemplazan la información extraída por la IA antes de hacer el análisis. Las tecnologías que pongas en tu experiencia suman años a esa skill automáticamente.</div>`:""}
+    <div class="prof">
+      <div class="grid">
+        <div class="panel who"><div class="av">${initials(c.name)}</div>
+          ${ed?`<div class="field"><label for="e-name">NOMBRE</label><input class="input" id="e-name" value="${esc(c.name)}"></div><div class="field"><label for="e-role">CARGO</label><input class="input" id="e-role" value="${esc(c.role)}"></div><div class="field"><label for="e-mail">EMAIL</label><input class="input" id="e-mail" value="${esc(c.email)}"></div><div class="field"><label for="e-phone">TELÉFONO</label><input class="input" id="e-phone" value="${esc(c.phone)}"></div><div class="field"><label for="e-city">UBICACIÓN</label><input class="input" id="e-city" value="${esc(c.city)}"></div><div class="field"><label for="e-area">DEPARTAMENTO</label><input class="input" id="e-area" value="${esc(c.area)}"></div>`
+          :`<b style="font-size:17px">${esc(c.name)}</b><span style="color:var(--mint);font-size:13.5px">${esc(c.role)}</span><span class="muted" style="font-size:12.5px">${esc(c.area)}</span><span class="mono muted" style="font-size:12px;margin-top:8px">${c.id}</span><span class="muted" style="font-size:13px">${esc(c.email)}</span><span class="muted" style="font-size:13px">${esc(c.phone)}</span><span class="muted" style="font-size:13px">${esc(c.city)}, Colombia</span>`}
+        </div>
+        <div class="panel"><div class="plabel">Power skills <b>${c.power.length}</b></div><div class="chips">${c.power.map((p,i)=>`<span class="chip p">${esc(p.n)} <small>${p.l}%</small>${ed?`<button data-dp="${i}" aria-label="Quitar ${esc(p.n)}">×</button>`:""}</span>`).join("")}</div>
+          ${ed?`<div class="edit-row"><select class="input md" id="np" aria-label="Nueva power skill">${POWER.filter(x=>!c.power.some(p=>p.n===x)).map(x=>`<option>${x}</option>`).join("")}</select><input class="input sm" id="npl" type="number" min="0" max="100" value="70" aria-label="Nivel"><button class="btn pri" id="addp" style="padding:7px 12px">+</button></div>`:""}</div>
+        <div class="panel"><div class="plabel">Educación</div>${ed?`<textarea class="input" id="e-edu" rows="4" aria-label="Educación">${esc(c.edu.split(" · ").join("\n"))}</textarea>`:`<div class="grid" style="gap:6px">${c.edu.split(" · ").map(x=>`<span style="font-size:13.5px">${esc(x)}</span>`).join("")}</div>`}</div>
+      </div>
+      <div class="grid">
+        <div class="panel"><div class="plabel">Habilidades técnicas <b>${c.tech.length} skills</b></div><div class="chips">${c.tech.map((t,i)=>`<span class="chip t">${esc(t.n)} <small>${t.l}% · ${t.y}a</small>${ed?`<button data-dt="${i}" aria-label="Quitar ${esc(t.n)}">×</button>`:""}</span>`).join("")}</div>
+          ${ed?`<div class="edit-row"><input class="input md" id="nt" placeholder="Ej: GraphQL, AWS, Kafka…" list="skilllist" aria-label="Nueva skill"><datalist id="skilllist">${[...new Set(ROLES.flatMap(r=>r.tech.map(t=>t.n)))].map(s=>`<option value="${esc(s)}">`).join("")}</datalist><input class="input sm" id="ntl" type="number" min="0" max="100" value="60" aria-label="Nivel %"><input class="input sm" id="nty" type="number" min="0" max="30" step="0.5" value="1" aria-label="Años"><button class="btn pri" id="addt" style="padding:7px 12px">+</button></div><p class="muted" style="font-size:11.5px;margin-top:6px">Nivel 0–100 · años de experiencia demostrable</p>`:""}</div>
+        <div class="panel"><div class="plabel">Experiencia laboral <b>${c.yrs} años en total</b></div>${expHTML(c,ed)}
+          ${ed?`<div class="exp-form"><input class="input full" id="x-cargo" placeholder="Cargo (ej: Data Engineer)" aria-label="Cargo"><input class="input full" id="x-emp" placeholder="Empresa / área (ej: NovaBanca — Datos)" aria-label="Empresa"><input class="input" id="x-desde" type="number" min="1980" max="${NOW}" placeholder="Desde (ej: 2022)" aria-label="Año de inicio"><input class="input" id="x-hasta" type="number" min="1980" max="${NOW}" placeholder="Hasta (ej: 2023)" aria-label="Año de fin"><label class="ck full"><input type="checkbox" id="x-hoy"> Trabajo aquí actualmente</label><input class="input full" id="x-tech" placeholder="Tecnologías separadas por coma (ej: Python, Apache Spark, Airflow)" list="skilllist" aria-label="Tecnologías"><p class="err full" id="x-err"></p><button class="btn pri full" id="addx">+ Añadir experiencia</button></div>`:""}</div>
+        <div class="panel"><div class="tabs"><button class="on" data-tab="json">JSON ATS</button><button data-tab="md">Markdown</button></div><pre class="code" id="out">${hlJSON(atsJSON(c))}</pre></div>
+        ${ed?"":`<div class="panel" style="border-color:rgba(0,229,160,.35)">✦ Se extrajeron <b>${c.tech.length}</b> habilidades técnicas, <b>${c.power.length}</b> power skills y <b>${c.exp.length}</b> experiencias. Si algo está incorrecto, usa el botón <b>Editar perfil</b>. ${A.fromBank?"":`<button class="btn ghost" id="saveBank" style="padding:6px 12px;margin-top:8px">Guardar en banco de CV</button>`}</div>`}
+      </div>
+    </div>`;
+  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("on",x===b));$("#out").innerHTML=b.dataset.tab==="json"?hlJSON(atsJSON(A.cand)):esc(mdCV(A.cand))});
+  if(ed){
+    const st=$("#stage"),again=()=>{syncYears(c);stageProfile()};
+    st.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{syncFields();const n=c.tech[+b.dataset.dt].n.toLowerCase();c.tech.splice(+b.dataset.dt,1);c.exp.forEach(x=>x.tech=x.tech.filter(t=>t.toLowerCase()!==n));again()});
+    st.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>{syncFields();c.power.splice(+b.dataset.dp,1);again()});
+    st.querySelectorAll("[data-dx]").forEach(b=>b.onclick=()=>{syncFields();c.exp.splice(+b.dataset.dx,1);again()});
+    $("#x-hoy").onchange=e=>{$("#x-hasta").disabled=e.target.checked};
+    $("#addt").onclick=()=>{syncFields();const n=$("#nt").value.trim();if(!n)return;const ex=c.tech.find(t=>norm(t.n)===norm(n));const y=+$("#nty").value||0;const o={n,l:Math.min(100,+$("#ntl").value||50),y,base:y};ex?Object.assign(ex,o):c.tech.push(o);again()};
+    $("#addp").onclick=()=>{syncFields();const n=$("#np").value;if(!n)return;c.power.push({n,l:Math.min(100,+$("#npl").value||60)});again()};
+    $("#addx").onclick=()=>{syncFields();const cargo=$("#x-cargo").value.trim(),emp=$("#x-emp").value.trim()||"NovaBanca",d=+$("#x-desde").value,hoy=$("#x-hoy").checked,h=hoy?"Hoy":+$("#x-hasta").value;
+      if(!cargo||!d||(!hoy&&!h)){$("#x-err").textContent="Escribe el cargo, el año de inicio y el de fin (o marca que trabajas ahí actualmente).";return}
+      if(!hoy&&h<d){$("#x-err").textContent="El año de fin no puede ser anterior al de inicio.";return}
+      const tech=$("#x-tech").value.split(",").map(t=>t.trim()).filter(Boolean).map(t=>{const known=[...new Set(ROLES.flatMap(r=>r.tech.map(x=>x.n)))].find(k=>norm(k)===norm(t));return known||t});
+      c.exp.push({cargo,empresa:emp,desde:d,hasta:h,tech});toast(`Experiencia "${cargo}" añadida · suma ${expDur(c.exp[c.exp.length-1])} año(s) a ${tech.length} tecnología(s).`);again()};
+    $("#save").onclick=()=>{syncFields();syncYears(c);A.editing=false;A.draft=null;toast("Perfil actualizado. Se usará en el matching.");stageProfile()};
+    $("#cancel").onclick=()=>{Object.keys(A.cand).forEach(k=>delete A.cand[k]);Object.assign(A.cand,A.draft);A.editing=false;A.draft=null;stageProfile()};
+  }else{
+    $("#edit").onclick=()=>{A.editing=true;A.draft=JSON.parse(JSON.stringify(c));stageProfile()};
+    $("#next").onclick=()=>setStep(3);
+    $("#saveBank")&&($("#saveBank").onclick=()=>{if(!EMP.some(e=>e.id===c.id)){EMP.push(c);refreshCharts()}A.fromBank=true;toast(`${c.name} quedó en el banco de CV.`);stageProfile()});
+  }
+}
+function syncFields(){const c=A.cand,v=id=>$(id)?$(id).value.trim():"";if($("#e-name")){c.name=v("#e-name")||c.name;c.role=v("#e-role")||c.role;c.email=v("#e-mail");c.phone=v("#e-phone");c.city=v("#e-city")||c.city;c.area=v("#e-area")||c.area}if($("#e-edu"))c.edu=$("#e-edu").value.split("\n").map(x=>x.trim()).filter(Boolean).join(" · ")||c.edu}
+
+function stageRoles(){
+  const rk=ranking(A.cand);
+  $("#stage").innerHTML=`<p class="eyebrow">Paso 03 / 05</p><h2 style="margin-top:8px">Proyectos TI activos</h2><p class="muted" style="margin:8px 0 20px">Compatibilidad de <b style="color:var(--fg)">${esc(A.cand.name)}</b> con cada rol abierto. Selecciona uno para el análisis detallado.</p>
+  <div class="roles">${rk.map(x=>{const lv=level(x.m.score);return`<button class="rolepick" data-r="${x.role.id}"><div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="badge ${x.role.project.st==="Activo"?"st-act":x.role.project.st==="Próximo"?"st-prox":"st-plan"}">${x.role.project.st}</span><b>${esc(x.role.name)}</b><span class="muted" style="font-size:12.5px">· ${esc(x.role.project.name)} · ${x.role.vac} vacante${x.role.vac>1?"s":""}</span></div>
+    <div class="chips" style="margin-top:8px">${x.m.tech.map(t=>`<span class="chip ${t.status}">${t.status==="miss"?"✕":t.status==="part"?"△":"✓"} ${esc(t.n)}</span>`).join("")}</div></div>${ring(x.m.score)}</button>`}).join("")}</div>
+  <div class="cta-row"><button class="btn ghost" id="back2">← Volver al perfil</button></div>`;
+  $("#stage").querySelectorAll(".rolepick").forEach(b=>b.onclick=async()=>{A.role=ROLES.find(r=>r.id===b.dataset.r);await calcAnim();setStep(4);showResult()});
+  $("#back2").onclick=()=>setStep(2);
+}
+async function calcAnim(){
+  const s=match(A.cand,A.role).score;
+  $("#stage").innerHTML=`<div class="calc"><p class="mono muted">Calculando compatibilidad…</p><div class="duo"><div style="display:grid;justify-items:center;gap:8px"><div class="av">${initials(A.cand.name)}</div><span style="font-size:13px">Perfil</span></div><div id="cr">${ring(0,"lg")}</div><div style="display:grid;justify-items:center;gap:8px"><div class="av" style="background:var(--panel);border:1px solid var(--line2);color:var(--portal);font-size:24px">⧉</div><span style="font-size:13px">${esc(A.role.project.name)}</span></div></div><h3>${esc(A.role.name)}</h3></div>`;
+  for(let v=0;v<=s;v+=Math.max(1,Math.round(s/40))){$("#cr").innerHTML=ring(v,"lg");blip();await sleep(reduce?0:22)}
+  $("#cr").innerHTML=ring(s,"lg");await sleep(450);
+}
+function showResult(){
+  const c=A.cand,r=A.role,m=match(c,r),lv=level(m.score);
+  const okT=m.tech.filter(t=>t.status==="ok").length,missAll=[...m.tech,...m.power].filter(x=>x.status!=="ok");
+  $("#stage").innerHTML=`<p class="eyebrow">Paso 04 / 05 · Resultados</p>
+  <div class="panel" style="margin-top:12px"><div class="res-head"><div><div class="chips" style="margin-bottom:8px"><span class="chip">${esc(r.project.area)}</span><span class="chip t">${r.vac} vacante${r.vac>1?"s":""}</span></div><h2>${esc(r.name)}</h2><p style="color:var(--mint);font-weight:700;margin-top:4px">${esc(r.project.name)}</p><p class="muted" style="font-size:13px">${r.project.dates} · Candidato: ${esc(c.name)}</p></div>
+    <div style="display:grid;justify-items:center;gap:6px">${ring(m.score,"lg")}<span class="badge ${lv.b}">${lv.l}</span></div></div>
+    <div class="chips" style="margin-top:14px"><span class="chip t">Técnico ${m.t}% · peso 70%</span><span class="chip p">Power skills ${m.p}% · peso 30%</span></div></div>
+  <div class="panel" style="margin-top:16px"><div class="plabel">Análisis de brecha · nivel y experiencia <b>│ mínimo requerido</b></div>
+    <div class="legend"><span><i style="background:var(--ok)"></i>Cumple nivel y experiencia</span><span><i style="background:var(--warn)"></i>Tiene la skill, nivel o experiencia insuficiente</span><span><i style="background:var(--bad)"></i>No posee la skill</span></div>
+    ${m.tech.map(t=>{const col=t.status==="ok"?"var(--ok)":t.status==="part"?"var(--warn)":"var(--bad)";return`<div class="gaprow"><span class="nm" style="${t.status==="miss"?"color:var(--dim)":""}">${esc(t.n)}</span><div class="trk"><i style="width:0;background:${col}" data-w="${t.has?t.has.l:0}"></i><u style="left:${t.l}%"></u></div><span class="st" style="color:${col}">${t.status==="ok"?"Cumple":t.status==="part"?"Parcial":"No tiene"}</span>
+      <span class="det">${t.has?`Nivel ${t.has.l}% / req. ${t.l}% · Exp. ${t.has.y} años / req. ${t.y} años`:"Skill no registrada en el perfil"}</span></div>`}).join("")}</div>
+  <div class="two" style="margin-top:16px">
+    <div class="panel"><div class="plabel">Power skills requeridas</div><div class="chips">${m.power.map(p=>`<span class="chip ${p.status}">${p.status==="ok"?"✓":p.status==="part"?"△":"✕"} ${esc(p.n)} <small>${p.has?p.has.l:0}/${p.l}</small></span>`).join("")}</div></div>
+    <div class="panel"><div class="plabel">Skills por cerrar <b>${missAll.length}</b></div><div class="chips">${missAll.length?missAll.map(x=>`<span class="chip ${x.status}">${esc(x.n)}</span>`).join(""):'<span class="muted">Ninguna. Cumple todos los requisitos.</span>'}</div></div>
+  </div>
+  <div class="verdict"><button class="btn ghost" id="otros">← Ver otros proyectos</button><div class="panel" style="padding:12px 16px"><b style="color:${lv.c}">${lv.l}</b><p class="muted" style="font-size:13px">${okT} de ${m.tech.length} skills técnicas cumplen nivel y experiencia.${missAll.length?" Por cerrar: "+missAll.map(x=>x.n).join(", ")+".":""}</p></div><button class="btn pri" id="toPlan">Plan de capacitación →</button></div>`;
+  requestAnimationFrame(()=>document.querySelectorAll(".trk i").forEach(i=>i.style.width=i.dataset.w+"%"));
+  $("#otros").onclick=()=>setStep(3);$("#toPlan").onclick=()=>setStep(5);
+}
+const enrolled=new Set();
+const enc=encodeURIComponent;
+const SEARCH=[["Coursera",q=>"https://www.coursera.org/search?query="+enc(q)],["Udemy",q=>"https://www.udemy.com/courses/search/?q="+enc(q)],["Platzi",q=>"https://platzi.com/buscar/?search="+enc(q)],["LinkedIn Learning",q=>"https://www.linkedin.com/learning/search?keywords="+enc(q)],["edX",q=>"https://www.edx.org/search?q="+enc(q)],["DataCamp",q=>"https://www.datacamp.com/search?q="+enc(q)]];
+function courseURL(co,skill){const hit=SEARCH.find(([k])=>co.prov.includes(k));return hit?hit[1](hit[0]==="Coursera"||hit[0]==="Udemy"?co.n:skill):"https://www.google.com/search?q="+enc(co.n+" "+co.prov)}
+function gapSentence(g){
+  if(g.kind==="Técnica"){
+    if(g.status==="miss")return`Le faltó saber sobre <b>${esc(g.n)}</b>: el rol pide nivel ${g.l}% y ${g.y} año${g.y===1?"":"s"} de experiencia, y no aparece en su hoja de vida.`;
+    const lv=g.has.l<g.l,yr=g.has.y<g.y;
+    return`Le falta profundizar en <b>${esc(g.n)}</b>: ${lv?`tiene nivel ${g.has.l}% y se pide ${g.l}%`:`su nivel (${g.has.l}%) sí alcanza`}${yr?`; acredita ${g.has.y} año${g.has.y===1?"":"s"} y se piden ${g.y}`:""}.`;
+  }
+  return g.status==="miss"?`No se evidencia la power skill <b>${esc(g.n)}</b> en su perfil (se pide ${g.l}/100).`:`Debe fortalecer <b>${esc(g.n)}</b>: tiene ${g.has.l} de ${g.l} puntos requeridos.`;
+}
+function stagePlan(){
+  const c=A.cand,r=A.role,m=match(c,r);
+  const gaps=[...m.tech.map(t=>({...t,kind:"Técnica"})),...m.power.map(p=>({...p,kind:"Power skill"}))].filter(x=>x.status!=="ok");
+  const items=gaps.map(g=>({g,cs:COURSES[g.n]||[C("Ruta de aprendizaje en "+g.n,"Coursera",10,"Intermedio")]}));
+  const hours=items.reduce((s,i)=>s+i.cs.reduce((a,b)=>a+b.h,0),0),nc=items.reduce((s,i)=>s+i.cs.length,0);
+  $("#stage").innerHTML=`<div class="section-head"><div><p class="eyebrow">Paso 05 / 05</p><h2 style="margin-top:8px">Plan de capacitación</h2><p class="muted" style="margin-top:6px">Para <b style="color:var(--fg)">${esc(c.name)}</b> en el rol <b style="color:var(--fg)">${esc(r.name)}</b> · ${esc(r.project.name)}</p></div>
+    <div class="plan-k" style="min-width:min(100%,360px)"><div class="panel"><div class="n" style="color:var(--portal)">${gaps.length}</div><div class="muted" style="font-size:12px">Brechas</div></div><div class="panel"><div class="n" style="color:var(--mint)">${nc}</div><div class="muted" style="font-size:12px">Cursos / cert.</div></div><div class="panel"><div class="n">${hours}h</div><div class="muted" style="font-size:12px">Horas estimadas</div></div></div></div>
+  ${gaps.length?`<div class="panel diag" style="margin-bottom:16px;border-color:rgba(255,154,60,.4)"><div class="plabel">Diagnóstico · qué le faltó <b>compatibilidad actual ${m.score}%</b></div><ul>${gaps.map(g=>`<li>${gapSentence(g)}</li>`).join("")}</ul></div>`:""}
+  <div class="grid">${items.length?items.map((it,i)=>`<div class="acc"><button aria-expanded="${i===0}" data-acc="${i}"><span class="badge ${it.g.status==="miss"?"b-gap":"b-pot"}">${it.g.status==="miss"?"FALTANTE":"REFORZAR"}</span><b>${esc(it.g.n)}</b><span class="chip ${it.g.kind==="Técnica"?"t":"p"}">${it.g.kind}</span><span class="mono" style="color:var(--mint)">${i===0?"−":"+"}</span></button>
+    <div class="body" ${i===0?"":"hidden"}><p class="muted" style="font-size:13px">${gapSentence(it.g)}</p>${it.cs.map(co=>{const key=it.g.n+co.n;return`<div class="course"><div><div class="cn">${esc(co.n)}</div><div class="cm"><span>${esc(co.prov)}</span><span class="mono">${co.h}h</span><span class="badge ${co.t==="Certificación"?"b-train":co.lvl==="Power skill"?"b-ready":"b-pot"}">${co.t==="Certificación"?"Certificación":co.lvl}</span></div></div><div class="cta-row" style="margin:0;gap:8px"><a class="btn link" href="${courseURL(co,it.g.n)}" target="_blank" rel="noopener">Ver curso ↗</a>${enrolled.has(key)?`<span class="enrolled">✓ Inscrito</span>`:`<button class="btn ghost" data-en="${esc(key)}" style="padding:7px 14px">Marcar inscrito</button>`}</div></div>`}).join("")}
+      <div class="links">Más opciones para ${esc(it.g.n)}: ${SEARCH.slice(0,3).map(([k,f])=>`<a href="${f(it.g.n)}" target="_blank" rel="noopener">${k} ↗</a>`).join("")}</div></div></div>`).join("")
+    :`<div class="panel">🎯 No hay brechas: ${esc(c.name)} cumple todos los requisitos de este rol.</div>`}</div>
+  <div class="panel" style="margin-top:18px;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;background:linear-gradient(120deg,rgba(0,229,160,.07),rgba(255,154,60,.06))"><div><h3>¡Listo para crecer!</h3><p class="muted" style="margin-top:4px">Al completar este plan, ${esc(c.name.split(" ")[0])} podrá participar como <b style="color:var(--mint)">${esc(r.name)}</b> en <b style="color:var(--mint)">${esc(r.project.name)}</b>.</p></div>
+    <div class="cta-row" style="margin:0"><button class="btn ghost" id="otros2">← Ver otros proyectos</button><button class="btn pri" id="newcv">Analizar otro CV</button></div></div>`;
+  $("#stage").querySelectorAll("[data-acc]").forEach(b=>b.onclick=()=>{const body=b.nextElementSibling;body.hidden=!body.hidden;b.setAttribute("aria-expanded",!body.hidden);b.lastElementChild.textContent=body.hidden?"+":"−"});
+  $("#stage").querySelectorAll("[data-en]").forEach(b=>b.onclick=()=>{enrolled.add(b.dataset.en);toast("Inscripción registrada (simulada).");stagePlan()});
+  $("#otros2").onclick=()=>setStep(3);$("#newcv").onclick=()=>setStep(1);
+}
+
+/* ================= PROYECTOS ================= */
+function renderProjects(){
+  $("#projList").innerHTML=PROJ.map(p=>`<div class="panel proj"><div class="proj-head"><div><div class="chips" style="margin-bottom:8px"><span class="badge ${p.st==="Activo"?"st-act":p.st==="Próximo"?"st-prox":"st-plan"}">${p.st}</span><span class="chip">${esc(p.area)}</span></div><h3>${esc(p.name)}</h3><p class="muted" style="font-size:13.5px;margin-top:4px">${esc(p.desc)}</p><p class="dates" style="margin-top:4px">${p.dates} · ${p.roles.length} rol${p.roles.length>1?"es":""}</p></div></div>
+    ${p.roles.map(r=>{const top=EMP.map(e=>({e,s:match(e,r).score})).sort((a,b)=>b.s-a.s).slice(0,3);return`<div class="role-box"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><b>${esc(r.name)} <span class="tag" style="margin-left:6px">${r.vac} vacante${r.vac>1?"s":""}</span></b></div>
+      <div class="chips">${r.tech.map(t=>`<span class="chip t">${esc(t.n)} <small>≥${t.l}% · ${t.y}a</small></span>`).join("")}${r.power.map(t=>`<span class="chip p">${esc(t.n)} <small>≥${t.l}</small></span>`).join("")}</div>
+      <div><p class="plabel" style="margin:4px 0 8px">Mejores candidatos</p><div class="top3">${top.map(o=>`<button data-e="${o.e.id}" data-r="${r.id}"><span class="av">${initials(o.e.name)}</span>${esc(o.e.name)} <b class="mono" style="color:${level(o.s).c}">${o.s}%</b></button>`).join("")}</div></div></div>`}).join("")}</div>`).join("");
+  $("#projList").querySelectorAll(".top3 button").forEach(b=>b.onclick=()=>openResult(EMP.find(e=>e.id===b.dataset.e),ROLES.find(r=>r.id===b.dataset.r)));
+}
+
+/* ================= MATRIZ ================= */
+function renderMatrix(){
+  $("#mx").innerHTML=`<thead><tr><th>Empleado</th>${ROLES.map(r=>`<th>${esc(r.name)}<small>${esc(r.project.name)}</small></th>`).join("")}</tr></thead><tbody>${EMP.map(e=>{const scores=ROLES.map(r=>match(e,r).score),mx=Math.max(...scores);return`<tr><th>${esc(e.name)}<small>${esc(e.role)}</small></th>${scores.map((s,i)=>`<td class="cell" data-e="${e.id}" data-r="${ROLES[i].id}" style="background:${cellColor(s)}${(.12+s/100*.55).toFixed(2)});color:${s>=40?"#fff":"#ffb3ba"};${s===mx?"box-shadow:inset 0 0 0 2px #fff":""}" title="${esc(e.name)} → ${esc(ROLES[i].name)}: ${s}%">${s}</td>`).join("")}</tr>`}).join("")}</tbody>`;
+  $("#mx").onclick=ev=>{const td=ev.target.closest("td.cell");if(td)openResult(EMP.find(e=>e.id===td.dataset.e),ROLES.find(r=>r.id===td.dataset.r))};
+}
+
+/* ================= CÓDIGO MOSTRADO ================= */
+$("#pyCode").innerHTML=`<span class="c"># match_engine.py — TalentMatch · Iteración 03</span>
+<span class="kw">import</span> json
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+
+PESO_TECNICO, PESO_POWER = <span class="n">0.7</span>, <span class="n">0.3</span>
+
+<span class="kw">def</span> <span class="k">credito_tecnico</span>(req, cv_skills):
+    h = cv_skills.get(req[<span class="s">"nombre"</span>].lower())
+    <span class="kw">if not</span> h:
+        <span class="kw">return</span> <span class="n">0.0</span>, <span class="s">"faltante"</span>
+    nivel = min(<span class="n">1</span>, h[<span class="s">"nivel"</span>] / req[<span class="s">"nivel"</span>])
+    anios = min(<span class="n">1</span>, h[<span class="s">"anios"</span>] / max(req[<span class="s">"anios"</span>], <span class="n">0.1</span>))
+    ok = h[<span class="s">"nivel"</span>] >= req[<span class="s">"nivel"</span>] <span class="kw">and</span> h[<span class="s">"anios"</span>] >= req[<span class="s">"anios"</span>]
+    <span class="kw">return</span> <span class="n">0.6</span>*nivel + <span class="n">0.4</span>*anios, <span class="s">"cumple"</span> <span class="kw">if</span> ok <span class="kw">else</span> <span class="s">"parcial"</span>
+
+<span class="kw">def</span> <span class="k">credito_power</span>(req, cv_power):
+    h = cv_power.get(req[<span class="s">"nombre"</span>].lower())
+    <span class="kw">if not</span> h:
+        <span class="kw">return</span> <span class="n">0.0</span>, <span class="s">"faltante"</span>
+    <span class="kw">return</span> min(<span class="n">1</span>, h / req[<span class="s">"nivel"</span>]), <span class="s">"cumple"</span> <span class="kw">if</span> h >= req[<span class="s">"nivel"</span>] <span class="kw">else</span> <span class="s">"parcial"</span>
+
+<span class="kw">def</span> <span class="k">match</span>(cv: dict, oferta: dict) -> dict:
+    tec = {s[<span class="s">"nombre"</span>].lower(): s <span class="kw">for</span> s <span class="kw">in</span> cv[<span class="s">"habilidades_tecnicas"</span>]}
+    pwr = {s[<span class="s">"nombre"</span>].lower(): s[<span class="s">"nivel"</span>] <span class="kw">for</span> s <span class="kw">in</span> cv[<span class="s">"power_skills"</span>]}
+    t = [credito_tecnico(r, tec) <span class="kw">for</span> r <span class="kw">in</span> oferta[<span class="s">"tecnicas"</span>]]
+    p = [credito_power(r, pwr) <span class="kw">for</span> r <span class="kw">in</span> oferta[<span class="s">"power_skills"</span>]]
+    prom = <span class="kw">lambda</span> xs: sum(c <span class="kw">for</span> c, _ <span class="kw">in</span> xs) / len(xs) <span class="kw">if</span> xs <span class="kw">else</span> <span class="n">1</span>
+    score = round(<span class="n">100</span> * (PESO_TECNICO*prom(t) + PESO_POWER*prom(p)))
+    faltantes = [r[<span class="s">"nombre"</span>] <span class="kw">for</span> r, (_, st) <span class="kw">in</span>
+                 zip(oferta[<span class="s">"tecnicas"</span>] + oferta[<span class="s">"power_skills"</span>], t + p)
+                 <span class="kw">if</span> st != <span class="s">"cumple"</span>]
+    <span class="kw">return</span> {<span class="s">"compatibilidad"</span>: score, <span class="s">"skills_faltantes"</span>: faltantes}
+
+<span class="kw">def</span> <span class="k">potencial</span>(cv, ofertas):
+    <span class="c"># ranking del empleado en todos los puestos de la empresa</span>
+    <span class="kw">return</span> sorted(({<span class="s">"rol"</span>: o[<span class="s">"rol"</span>], **match(cv, o)} <span class="kw">for</span> o <span class="kw">in</span> ofertas),
+                  key=<span class="kw">lambda</span> x: x[<span class="s">"compatibilidad"</span>], reverse=<span class="kw">True</span>)`;
+$("#promptCode").textContent=`Eres un analista ATS. Lee la hoja de vida adjunta (PDF)
+y devuelve SOLO un JSON con el esquema ats.cv.v1:
+{ candidato, habilidades_tecnicas:[{nombre,nivel,anios}],
+  power_skills:[{nombre,nivel}], experiencia, educacion }
+- nivel: 0-100 según evidencia (proyectos, cargos, certificaciones)
+- anios: experiencia demostrable con la skill
+- power_skills: pensamiento crítico, empatía, comunicación
+  asertiva, liderazgo, adaptabilidad… solo con evidencia
+- No inventes datos; si falta algo, omítelo.`;
+
+/* ================= SPLASH ================= */
+async function startMusic(){
+  if(!songBuf&&window._savedSong){try{await decodeSong(window._savedSong.name,window._savedSong.ab)}catch(e){}}
+  if(songBuf){playBuf();return}
+  const a=new Audio("assets/portals.mp3");a.loop=true;a.volume=.6;
+  try{await a.play();stopAll();audioEl=a;setLive(true,"Portals");$("#trackInfo").textContent="▶ assets/portals.mp3 · en bucle"}
+  catch(e){setTimeout(()=>{toast("Carga la canción con el botón Música para escucharla.");openMusic(true)},900)}
+}
+(async()=>{const msgs=["Calibrando motor de matching…","Conectando con Claude Opus 5.5 API…","Cargando banco de CV y proyectos TI…","Abriendo portales…","Sistema listo."];
+  for(let i=0;i<msgs.length;i++){$("#spMsg").textContent=msgs[i];$("#spBar").style.width=((i+1)/msgs.length*100)+"%";await sleep(reduce?120:560)}
+  $("#startBtn").hidden=false;$("#spNote").hidden=false;$("#startBtn").focus()})();
+$("#spAudio").onchange=async e=>{const f=e.target.files[0];if(!f)return;$("#spAudioLbl").textContent="Cargando…";if(await useFile(f)){$("#spAudioLbl").textContent="✓ "+f.name+" lista";$("#spAudioLbl").classList.add("live")}else $("#spAudioLbl").textContent="🎵 Cargar canción \"Portals\" (MP3)"};
+loadSong().then(async r=>{if(r&&r.ab){$("#spAudioLbl").textContent="✓ "+r.name+" guardada · suena al iniciar";$("#spAudioLbl").classList.add("live");window._savedSong=r}});
+$("#startBtn").onclick=()=>{ctx()&&actx.resume();startMusic();$("#splash").classList.add("out");setTimeout(()=>{$("#splash").hidden=true;refreshCharts()},850)};
+
+/* ================= INICIO ================= */
+renderNav();
+if(window.Chart){buildCharts()}else{$("#kpis").innerHTML='<p class="muted">No se pudo cargar la librería de gráficos.</p>'}
+</script>
+
+</body>
+</html>
