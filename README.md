@@ -36,7 +36,7 @@ TalentMatch le permite al administrador de RR. HH. o a la PMO:
 Además muestra el **potencial de cada empleado en todos los puestos** de los proyectos de la empresa.
 
 ### ¿Por qué power skills?
-Las power skills son la evolución de las soft skills: capacidades humanas, duraderas y transferibles que pueden entrenarse (González Pozo, 2026). Juliana González, de Blen360, nos recordó que son herramientas transversales que cambian con el tiempo gracias a la neuroplasticidad, y que el pensamiento crítico, la empatía y la comunicación son irreemplazables. Por eso TalentMatch las mide con un nivel de 0 a 100 en lugar de un sí o un no.
+Las power skills son la evolución de las soft skills: capacidades humanas, duraderas y transferibles que pueden entrenarse (González Pozo, 2026). Juliana González de Blen360, nos recordó que son herramientas transversales que cambian con el tiempo gracias a la neuroplasticidad, y que el pensamiento crítico, la empatía y la comunicación son irreemplazables. Por eso TalentMatch las mide con un nivel de 0 a 100 en lugar de un sí o un no.
 
 ---
 
@@ -73,30 +73,6 @@ Los **años de experiencia por tecnología** salen de dos fuentes, y se toma la 
 | **02** | Retroalimentación del grupo de Jurisprudencia | Página de bienvenida explicativa, edición del perfil extraído, brecha por nivel y años de experiencia |
 | **03** | Esta versión | Pantalla de inicio animada, landing descriptiva, login de administrador, banco de CV, matriz de potencial empleado × puesto, power skills dentro del match, experiencia laboral editable, recomendaciones con enlaces y motor con Claude Opus 5.5 + Python |
 
----
-
-## 🚀 Cómo usarlo
-
-### Opción 1: abrirlo en tu computador
-1. Descarga o clona el repositorio:
-   ```bash
-   git clone https://github.com/<tu-usuario>/cv-match.git
-   cd cv-match
-   ```
-2. Abre `index.html` con doble clic. Funciona en Chrome, Edge o Firefox.
-3. Se necesita internet para cargar las fuentes y la librería de gráficos (Chart.js).
-
-> 💡 Para que la música cargue sin restricciones del navegador, sírvelo con un servidor local:
-> ```bash
-> python -m http.server 8000
-> ```
-> Luego abre `http://localhost:8000`.
-
-### Opción 2: publicarlo con GitHub Pages
-1. Sube `index.html` y `README.md` a la rama `main` del repositorio.
-2. Ve a **Settings → Pages**.
-3. En *Source* elige **Deploy from a branch**, luego `main` y `/ (root)`, y guarda.
-4. En uno o dos minutos el sitio queda en `https://<tu-usuario>.github.io/cv-match/`.
 
 ### Recorrido de la demo
 1. **Pantalla de inicio:** espera la carga y pulsa **▶ INICIAR**.
@@ -116,21 +92,6 @@ Los **años de experiencia por tecnología** salen de dos fuentes, y se toma la 
 7. **Matriz de potencial:** mapa de calor empleado × puesto. Haz clic en una celda para ver el análisis.
 8. **Arquitectura:** el código `match_engine.py`, el prompt de extracción y la API propuesta.
 
-### 🎵 Música de fondo ("Portals", Avengers: Endgame)
-La canción tiene derechos de autor, por eso **no viene incluida** en el repositorio. Hay tres formas de hacerla sonar:
-
-1. **En la pantalla de inicio:** pulsa **🎵 Cargar canción "Portals" (MP3)**, elige el archivo y luego **▶ INICIAR**.
-2. **En cualquier momento:** usa el botón **Música** de la barra superior y *Cargar mi pista "Portals"*.
-3. **Automática en tu computador:** crea la carpeta `assets/` junto a `index.html` y copia ahí el archivo con el nombre `portals.mp3`.
-
-La página **recuerda la canción en tu navegador** (IndexedDB). Después de cargarla una vez, sonará sola al pulsar INICIAR en las siguientes visitas. El botón **Música** la pausa o la reanuda.
-
-> ⚠️ Si el repositorio es público, **no subas el MP3**. Agrega esto a tu `.gitignore`:
-> ```
-> assets/*.mp3
-> ```
-
----
 
 ## 🗂️ Estructura
 
@@ -167,7 +128,9 @@ Todos los empleados, proyectos, empresas (NovaBanca), correos y cifras son **fic
 
 González Pozo, A. (2026, 25 de febrero). *Power skills: qué son, cuáles son las más demandadas y cómo desarrollarlas*. isEazy. https://www.iseazy.com/es/blog/power-skills/
 
-Grupo de Jurisprudencia. (2026). *Retroalimentación de usabilidad del prototipo CV Match* [Evaluación no publicada]. Universidad Católica de Colombia.
+González Juliana (2026, 1 de Octubre). CONIITI: Conferencia en el Congreso Internacional de Innovación y Tendencias en Ingeniería.
+
+Grupo de Jurisprudencia. (2026). *Retroalimentación de usabilidad del prototipo CV Match*. Universidad Católica de Colombia.
 
 Lozano Calderón, J. S., Rojas Villamil, A. F., López Urrego, J. S., y Romero Cajamarca, J. O. (2026). *CV Match: prototipo de hoja de vida* [Prototipo interactivo]. Figma. https://www.figma.com/make/X4BrLzRcwRFbpZESLq63D4/Prototipo-de-Hoja-de-Vida
 
